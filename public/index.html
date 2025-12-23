@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reseller Ops</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body class="theme-light">
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="logo">RO</span>
+          <div>
+            <p class="title">Reseller Ops</p>
+            <p class="subtitle">Profit + compliance cockpit</p>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <div class="search-field">
+            <input id="global-search" type="search" placeholder="Global search items, lots, sales, expenses" />
+            <div id="global-search-results" class="search-results"></div>
+          </div>
+          <button class="btn ghost" id="export-csv">Export CSV</button>
+          <button class="btn primary" id="new-entry">New entry</button>
+        </div>
+      </header>
+      <aside class="sidebar">
+        <nav>
+          <button class="nav-link active" data-screen="dashboard">Dashboard</button>
+          <button class="nav-link" data-screen="inventory">Inventory</button>
+          <button class="nav-link" data-screen="sales">Sales</button>
+          <button class="nav-link" data-screen="expenses">Expenses</button>
+          <button class="nav-link" data-screen="lots">Lots & Bundles</button>
+          <button class="nav-link" data-screen="pricing">Pricing & SEO</button>
+          <button class="nav-link" data-screen="reports">Reports (Tax Prep)</button>
+          <button class="nav-link" data-screen="settings">Settings</button>
+        </nav>
+        <div class="sidebar-footer">
+          <p class="status-pill">Auth: Zero Trust enforced</p>
+          <p class="quiet">All numbers auto-saved</p>
+        </div>
+      </aside>
+      <main class="content">
+        <section class="screen active" id="screen-dashboard">
+          <div class="screen-header">
+            <div>
+              <h1>Dashboard</h1>
+              <p>Quiet progress reinforcement and next steps.</p>
+            </div>
+            <div class="inline-grid">
+              <div class="kpi">
+                <p class="label">Net profit (MTD)</p>
+                <p class="value positive">$12,480</p>
+                <p class="assist">Why is this number what it is?</p>
+              </div>
+              <div class="kpi">
+                <p class="label">Sales tax liability</p>
+                <p class="value warning">$840</p>
+                <p class="assist">Florida liability only (non-eBay)</p>
+              </div>
+              <div class="kpi">
+                <p class="label">Drafts ready to list</p>
+                <p class="value">18</p>
+                <p class="assist">Ready to List filter active</p>
+              </div>
+            </div>
+          </div>
+          <div class="panel-grid">
+            <article class="panel">
+              <h2>What should I do next?</h2>
+              <ul class="next-list" id="next-actions"></ul>
+            </article>
+            <article class="panel">
+              <h2>Progress signals</h2>
+              <div class="timeline">
+                <div class="timeline-item">3 lots are staged for pricing.</div>
+                <div class="timeline-item">All receipts uploaded this week.</div>
+                <div class="timeline-item">No closed-period edits detected.</div>
+              </div>
+            </article>
+            <article class="panel wide">
+              <h2>Why is this number what it is?</h2>
+              <div class="drilldown">
+                <div>
+                  <p>Revenue sources</p>
+                  <strong>Sales only</strong>
+                  <p class="muted">Pricing drafts never affect accounting.</p>
+                </div>
+                <div>
+                  <p>Tax jar estimate</p>
+                  <strong>$2,960</strong>
+                  <p class="muted">Federal only. Florida liability tracked separately.</p>
+                </div>
+                <div>
+                  <p>Expenses split</p>
+                  <strong>62% inventory / 38% operations</strong>
+                  <p class="muted">Updated from last month.</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-inventory">
+          <div class="screen-header">
+            <div>
+              <h1>Inventory</h1>
+              <p>Searchable dropdowns, global warnings, and inventory status.</p>
+            </div>
+            <div class="actions">
+              <button class="btn" id="add-item">Add item</button>
+              <button class="btn ghost" id="ready-filter">Ready to List</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="searchable-dropdown">
+              <input type="text" id="item-search" placeholder="Search items" />
+              <div id="item-results" class="search-results"></div>
+            </div>
+            <div class="table">
+              <div class="row header">
+                <span>Item</span>
+                <span>Status</span>
+                <span>Location</span>
+                <span>Warnings</span>
+                <span></span>
+              </div>
+              <div class="row">
+                <span>Vintage Camera</span>
+                <span class="pill draft">Draft</span>
+                <span>Bin A2</span>
+                <span class="soft-warning">Missing SKU</span>
+                <span><button class="btn ghost small">Edit</button></span>
+              </div>
+              <div class="row">
+                <span>Mid-century Lamp</span>
+                <span class="pill listed">Listed</span>
+                <span>Bin B1</span>
+                <span class="soft-warning">Low photos</span>
+                <span><button class="btn ghost small">Edit</button></span>
+              </div>
+              <div class="row">
+                <span>Record Player</span>
+                <span class="pill ready">Ready</span>
+                <span>Bin C4</span>
+                <span class="soft-warning">No draft SEO</span>
+                <span><button class="btn ghost small">Edit</button></span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-sales">
+          <div class="screen-header">
+            <div>
+              <h1>Sales</h1>
+              <p>Sales are the only revenue source. Florida tax handled separately.</p>
+            </div>
+            <div class="actions">
+              <button class="btn" id="add-sale">Log sale</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="table">
+              <div class="row header">
+                <span>Order</span>
+                <span>Platform</span>
+                <span>Profit</span>
+                <span>Tax</span>
+                <span>Status</span>
+                <span></span>
+              </div>
+              <div class="row">
+                <span>#EV-0192</span>
+                <span>eBay</span>
+                <span class="positive">$128</span>
+                <span class="muted">Platform collected</span>
+                <span class="pill listed">Settled</span>
+                <span><button class="btn ghost small">Why?</button></span>
+              </div>
+              <div class="row">
+                <span>#SF-0441</span>
+                <span>Shopify</span>
+                <span class="negative">-$12</span>
+                <span class="warning">$18 liability</span>
+                <span class="pill draft">Pending</span>
+                <span><button class="btn ghost small">Why?</button></span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-expenses">
+          <div class="screen-header">
+            <div>
+              <h1>Expenses</h1>
+              <p>Split expenses across categories with soft warnings.</p>
+            </div>
+            <div class="actions">
+              <button class="btn" id="add-expense">Add expense</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="table">
+              <div class="row header">
+                <span>Expense</span>
+                <span>Category</span>
+                <span>Split</span>
+                <span>Receipt</span>
+                <span></span>
+              </div>
+              <div class="row">
+                <span>Shipping supplies</span>
+                <span>Operations</span>
+                <span>50 / 30 / 20</span>
+                <span class="pill ready">Uploaded</span>
+                <span><button class="btn ghost small">Edit</button></span>
+              </div>
+              <div class="row">
+                <span>Estate sale haul</span>
+                <span>Inventory</span>
+                <span>100 / 0 / 0</span>
+                <span class="soft-warning">Missing receipt</span>
+                <span><button class="btn ghost small">Edit</button></span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-lots">
+          <div class="screen-header">
+            <div>
+              <h1>Lots & Bundles</h1>
+              <p>Lots wrap items without storing pricing.</p>
+            </div>
+            <div class="actions">
+              <button class="btn" id="add-lot">New lot</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="table">
+              <div class="row header">
+                <span>Lot</span>
+                <span>Items</span>
+                <span>Status</span>
+                <span></span>
+              </div>
+              <div class="row">
+                <span>Vintage Audio</span>
+                <span>4 items</span>
+                <span class="pill ready">Ready</span>
+                <span><button class="btn ghost small">Inspect</button></span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-pricing">
+          <div class="screen-header">
+            <div>
+              <h1>Pricing & SEO (Draft Studio)</h1>
+              <p>Drafts never affect accounting until listed.</p>
+            </div>
+            <div class="actions">
+              <button class="btn" id="add-draft">New draft</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="skeleton-grid">
+              <div class="skeleton"></div>
+              <div class="skeleton"></div>
+              <div class="skeleton"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-reports">
+          <div class="screen-header">
+            <div>
+              <h1>Reports (Tax Prep)</h1>
+              <p>Unusual items are flagged for attention.</p>
+            </div>
+            <div class="actions">
+              <button class="btn" id="view-tax">Open Tax Jar</button>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="report-grid">
+              <article>
+                <h3>Tax Jar</h3>
+                <p class="value">$2,960</p>
+                <p class="muted">Federal estimate only</p>
+                <button class="btn ghost small" id="tax-drilldown">Why is this number?</button>
+              </article>
+              <article>
+                <h3>Unusual items</h3>
+                <ul class="unusual">
+                  <li>Record Player: margin below 5%</li>
+                  <li>Estate Lot #12: missing receipt</li>
+                </ul>
+              </article>
+              <article>
+                <h3>Closed period edits</h3>
+                <p class="warning">2 edits awaiting confirmation</p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-settings">
+          <div class="screen-header">
+            <div>
+              <h1>Settings</h1>
+              <p>Appearance, density, reminders, and safe confirmations.</p>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="settings-grid">
+              <div>
+                <h3>Appearance & theme</h3>
+                <label class="row">
+                  <span>Theme</span>
+                  <select id="theme-select">
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                    <option value="system">System</option>
+                  </select>
+                </label>
+                <label class="row">
+                  <span>Accent color</span>
+                  <input type="color" id="accent-color" value="#5b5dff" />
+                </label>
+                <label class="row">
+                  <span>Optional gradients</span>
+                  <input type="checkbox" id="enable-gradients" />
+                </label>
+              </div>
+              <div>
+                <h3>Density</h3>
+                <label class="row">
+                  <span>Comfortable</span>
+                  <input type="radio" name="density" value="comfortable" checked />
+                </label>
+                <label class="row">
+                  <span>Compact</span>
+                  <input type="radio" name="density" value="compact" />
+                </label>
+              </div>
+              <div>
+                <h3>Reminders & nudges</h3>
+                <label class="row">
+                  <span>Weekly review</span>
+                  <input type="checkbox" checked />
+                </label>
+                <label class="row">
+                  <span>Draft follow-up</span>
+                  <input type="checkbox" checked />
+                </label>
+              </div>
+              <div>
+                <h3>Safety confirmations</h3>
+                <label class="row">
+                  <span>Confirm deletions</span>
+                  <input type="checkbox" checked />
+                </label>
+                <label class="row">
+                  <span>Closed period edits</span>
+                  <input type="checkbox" checked />
+                </label>
+              </div>
+              <div>
+                <h3>Vehicle deductions</h3>
+                <label class="row">
+                  <span>Mileage</span>
+                  <input type="radio" name="vehicle-deduction" value="mileage" checked />
+                </label>
+                <label class="row">
+                  <span>Actual expenses</span>
+                  <input type="radio" name="vehicle-deduction" value="actual" />
+                </label>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast">
+      <span id="toast-message"></span>
+      <button id="toast-undo" class="btn ghost small">Undo</button>
+    </div>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
