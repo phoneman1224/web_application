@@ -11,22 +11,26 @@ const themeSelect = document.getElementById("theme-select");
 const accentPicker = document.getElementById("accent-color");
 const gradientsToggle = document.getElementById("enable-gradients");
 
-const inventoryRows = document.getElementById("inventory-rows");
-const expenseRows = document.getElementById("expense-rows");
-const fastAddButton = document.getElementById("fast-add-item");
-const fastItemName = document.getElementById("fast-item-name");
-const fastItemBin = document.getElementById("fast-item-bin");
-const itemImageUpload = document.getElementById("item-image-upload");
-const expenseSaveButton = document.getElementById("save-expense");
-const expenseName = document.getElementById("expense-name");
-const expenseCategory = document.getElementById("expense-category");
-const expenseAmount = document.getElementById("expense-amount");
-const receiptUpload = document.getElementById("receipt-upload");
-
-let itemsCache = [];
-let expensesCache = [];
-let selectedItemId = null;
-let selectedExpenseId = null;
+const dataStore = {
+  items: [
+    { id: "itm-1", name: "Vintage Camera", status: "Draft" },
+    { id: "itm-2", name: "Mid-century Lamp", status: "Listed" },
+    { id: "itm-3", name: "Record Player", status: "Ready" },
+    { id: "itm-4", name: "Leather Satchel", status: "Draft" }
+  ],
+  lots: [
+    { id: "lot-1", name: "Vintage Audio" },
+    { id: "lot-2", name: "Winter Apparel" }
+  ],
+  sales: [
+    { id: "sale-1", name: "#EV-0192" },
+    { id: "sale-2", name: "#SF-0441" }
+  ],
+  expenses: [
+    { id: "exp-1", name: "Shipping supplies" },
+    { id: "exp-2", name: "Estate sale haul" }
+  ]
+};
 
 function showToast(message, undoCallback) {
   toastMessage.textContent = message;
@@ -47,85 +51,9 @@ navLinks.forEach((link) => {
   link.addEventListener("click", () => switchScreen(link.dataset.screen));
 });
 
-async function apiFetch(path, options) {
-  const response = await fetch(path, {
-    headers: { "content-type": "application/json", ...(options?.headers ?? {}) },
-    ...options
-  });
-  if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
-    throw new Error(payload.error || "Request failed");
-  }
-  return response;
-}
-
-async function loadDashboard() {
-  const summary = await apiFetch("/api/reports/summary").then((res) => res.json());
-  document.getElementById("kpi-profit").textContent = `$${(summary.salesTotal - summary.expenseTotal).toFixed(2)}`;
-  document.getElementById("kpi-florida").textContent = `$${Number(summary.floridaLiability).toFixed(2)}`;
-  const ready = await apiFetch("/api/items/ready").then((res) => res.json());
-  document.getElementById("kpi-ready").textContent = String(ready.items.length);
-}
-
-function renderItems(items) {
-  inventoryRows.innerHTML = items
-    .map(
-      (item) => `
-    <div class="row" data-id="${item.id}">
-      <span>${item.name}</span>
-      <span class="pill ${item.status === "listed" ? "listed" : item.status === "sold" ? "draft" : "ready"}">${item.status}</span>
-      <span>${item.bin_location ?? "—"}</span>
-      <span class="soft-warning">${item.status === "unlisted" ? "Ready for pricing" : ""}</span>
-      <span><button class="btn ghost small" data-action="edit">Edit</button></span>
-    </div>`
-    )
-    .join("");
-
-  inventoryRows.querySelectorAll(".row").forEach((row) => {
-    row.addEventListener("click", () => {
-      selectedItemId = row.dataset.id;
-    });
-  });
-}
-
-async function loadItems() {
-  const data = await apiFetch("/api/items").then((res) => res.json());
-  itemsCache = data.items || [];
-  renderItems(itemsCache);
-  attachSearch(globalSearch, globalSearchResults, buildGlobalItems());
-  attachSearch(itemSearch, itemResults, itemsCache);
-}
-
-function renderExpenses(expenses) {
-  expenseRows.innerHTML = expenses
-    .map(
-      (expense) => `
-    <div class="row" data-id="${expense.id}">
-      <span>${expense.name}</span>
-      <span>${expense.category}</span>
-      <span>${expense.amount}</span>
-      <span class="pill ready">${expense.receipt_key ? "Uploaded" : "Missing"}</span>
-      <span><button class="btn ghost small" data-action="edit">Edit</button></span>
-    </div>`
-    )
-    .join("");
-
-  expenseRows.querySelectorAll(".row").forEach((row) => {
-    row.addEventListener("click", () => {
-      selectedExpenseId = row.dataset.id;
-    });
-  });
-}
-
-async function loadExpenses() {
-  const data = await apiFetch("/api/expenses").then((res) => res.json());
-  expensesCache = data.expenses || [];
-  renderExpenses(expensesCache);
-}
-
 function renderNextActions() {
   const nextActions = document.getElementById("next-actions");
-  const itemsNeedingDraft = itemsCache.filter((item) => item.status === "unlisted");
+  const itemsNeedingDraft = dataStore.items.filter((item) => item.status === "Draft");
   const content = [
     `Finish ${itemsNeedingDraft.length} pricing drafts to unlock listings`,
     "Review Florida sales tax liability in Reports",
@@ -162,13 +90,6 @@ function attachSearch(input, resultsContainer, items) {
   });
 }
 
-function buildGlobalItems() {
-  return [
-    ...itemsCache.map((item) => ({ ...item, name: `Item: ${item.name}` })),
-    ...expensesCache.map((expense) => ({ ...expense, name: `Expense: ${expense.name}` }))
-  ];
-}
-
 function updateTheme() {
   const theme = themeSelect.value;
   document.body.classList.toggle("theme-dark", theme === "dark");
@@ -185,15 +106,15 @@ function updateGradients() {
     : "none";
 }
 
-async function downloadCsv(path) {
+async function downloadCsv() {
   try {
-    const response = await fetch(path);
+    const response = await fetch("/api/exports/csv", { headers: { "cf-access-jwt-assertion": "browser", "cf-access-authenticated-user-email": "user@local" } });
     if (!response.ok) throw new Error("Export failed");
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = path.split("/").pop() || "export.csv";
+    link.download = "items-export.csv";
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -207,19 +128,13 @@ async function downloadCsv(path) {
 function registerActions() {
   const newEntry = document.getElementById("new-entry");
   newEntry.addEventListener("click", () => showToast("Entry created", () => showToast("Entry restored")));
-  document.getElementById("export-csv").addEventListener("click", () => downloadCsv("/api/exports/csv"));
-  document.getElementById("export-year-end").addEventListener("click", () => downloadCsv("/api/exports/year-end"));
-  document.getElementById("export-florida-tax").addEventListener("click", () => downloadCsv("/api/exports/florida-tax"));
+  document.getElementById("export-csv").addEventListener("click", downloadCsv);
   document.getElementById("add-item").addEventListener("click", () => showToast("Item added", () => showToast("Item removed")));
   document.getElementById("add-sale").addEventListener("click", () => showToast("Sale logged", () => showToast("Sale removed")));
   document.getElementById("add-expense").addEventListener("click", () => showToast("Expense saved"));
   document.getElementById("add-lot").addEventListener("click", () => showToast("Lot created"));
   document.getElementById("add-draft").addEventListener("click", () => showToast("Draft started"));
-  document.getElementById("ready-filter").addEventListener("click", async () => {
-    const ready = await apiFetch("/api/items/ready").then((res) => res.json());
-    renderItems(ready.items || []);
-    showToast("Ready to List filter applied");
-  });
+  document.getElementById("ready-filter").addEventListener("click", () => showToast("Ready to List filter applied"));
   document.getElementById("view-tax").addEventListener("click", () => showToast("Tax Jar opened"));
   document.getElementById("tax-drilldown").addEventListener("click", () =>
     showToast("Drilldown: sales revenue - expenses - promo discounts.")
@@ -230,65 +145,17 @@ function registerActions() {
   });
 }
 
-async function registerForms() {
-  fastAddButton.addEventListener("click", async () => {
-    if (!fastItemName.value.trim()) return;
-    await apiFetch("/api/items", {
-      method: "POST",
-      body: JSON.stringify({ name: fastItemName.value, binLocation: fastItemBin.value, status: "unlisted" })
-    });
-    fastItemName.value = "";
-    fastItemBin.value = "";
-    showToast("Item added");
-    await loadItems();
-    renderNextActions();
-  });
+const globalItems = [
+  ...dataStore.items.map((item) => ({ ...item, name: `Item: ${item.name}` })),
+  ...dataStore.lots.map((lot) => ({ ...lot, name: `Lot: ${lot.name}` })),
+  ...dataStore.sales.map((sale) => ({ ...sale, name: `Sale: ${sale.name}` })),
+  ...dataStore.expenses.map((expense) => ({ ...expense, name: `Expense: ${expense.name}` }))
+];
 
-  expenseSaveButton.addEventListener("click", async () => {
-    if (!expenseName.value.trim()) return;
-    await apiFetch("/api/expenses", {
-      method: "POST",
-      body: JSON.stringify({ name: expenseName.value, category: expenseCategory.value, amount: Number(expenseAmount.value) })
-    });
-    expenseName.value = "";
-    expenseCategory.value = "";
-    expenseAmount.value = "";
-    showToast("Expense saved");
-    await loadExpenses();
-  });
-
-  itemImageUpload.addEventListener("change", async (event) => {
-    const file = event.target.files?.[0];
-    if (!file || !selectedItemId) return;
-    await fetch(`/api/items/${selectedItemId}/images`, {
-      method: "POST",
-      headers: { "content-type": file.type },
-      body: await file.arrayBuffer()
-    });
-    showToast("Image uploaded");
-  });
-
-  receiptUpload.addEventListener("change", async (event) => {
-    const file = event.target.files?.[0];
-    if (!file || !selectedExpenseId) return;
-    await fetch(`/api/expenses/${selectedExpenseId}/receipt`, {
-      method: "POST",
-      headers: { "content-type": file.type },
-      body: await file.arrayBuffer()
-    });
-    showToast("Receipt uploaded");
-  });
-}
-
-async function boot() {
-  renderNextActions();
-  registerActions();
-  await loadItems();
-  await loadExpenses();
-  await loadDashboard();
-  renderNextActions();
-  await registerForms();
-}
+attachSearch(globalSearch, globalSearchResults, globalItems);
+attachSearch(itemSearch, itemResults, dataStore.items);
+renderNextActions();
+registerActions();
 
 if (themeSelect) {
   themeSelect.addEventListener("change", updateTheme);
@@ -297,5 +164,3 @@ if (themeSelect) {
   updateTheme();
   updateAccent();
 }
-
-boot();
