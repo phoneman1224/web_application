@@ -50,7 +50,7 @@ describe("cloudflare integration", () => {
 
     // retrieve
     const retrieved = run(
-      `npx wrangler r2 object get ${bucket}/${key}`
+      `npx wrangler r2 object get ${bucket}/${key} --pipe --remote`
     );
     expect(retrieved.trim()).toBe(content);
 
@@ -60,7 +60,7 @@ describe("cloudflare integration", () => {
     // verify deletion
     let deleted = false;
     try {
-      run(`npx wrangler r2 object get ${bucket}/${key}`);
+      run(`npx wrangler r2 object get ${bucket}/${key} --pipe --remote`);
     } catch {
       deleted = true;
     }
