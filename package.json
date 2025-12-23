@@ -1,0 +1,20 @@
+{
+  "name": "reseller-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --config wrangler.toml",
+    "test": "vitest run",
+    "test:cf": "node scripts/run-cf-tests.mjs",
+    "lint": "npm run test",
+    "deploy:test": "wrangler deploy --env test --config wrangler.generated.toml",
+    "deploy:prod": "wrangler deploy --env prod --config wrangler.generated.toml"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240229.0",
+    "typescript": "^5.4.2",
+    "vitest": "^1.6.0",
+    "wrangler": "^3.80.0"
+  }
+}
