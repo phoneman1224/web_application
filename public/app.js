@@ -134,6 +134,11 @@ function registerActions() {
   document.getElementById("add-expense").addEventListener("click", () => showToast("Expense saved"));
   document.getElementById("add-lot").addEventListener("click", () => showToast("Lot created"));
   document.getElementById("add-draft").addEventListener("click", () => showToast("Draft started"));
+  document.getElementById("ready-filter").addEventListener("click", async () => {
+    const ready = await apiFetch("/api/items/ready").then((res) => res.json());
+    renderItems(ready.items || []);
+    showToast("Ready to List filter applied");
+  });
   document.getElementById("ready-filter").addEventListener("click", () => showToast("Ready to List filter applied"));
   document.getElementById("view-tax").addEventListener("click", () => showToast("Tax Jar opened"));
   document.getElementById("tax-drilldown").addEventListener("click", () =>
