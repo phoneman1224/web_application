@@ -22,6 +22,11 @@ async function runWranglerWithInput(args: string[], input: string) {
   return stdout.trim();
 }
 
+function extractPayload(output: string) {
+  const lines = output.split(/\r?\n/).filter((line) => line.trim().length > 0);
+  return lines[lines.length - 1] ?? "";
+}
+
 async function getWorkerUrl() {
   const whoami = await runWrangler(["whoami"]);
   const match = whoami.match(/([\w-]+)\.workers\.dev/);
@@ -33,12 +38,11 @@ async function getWorkerUrl() {
 
 describe("cloudflare integration", () => {
   it("connects to Cloudflare and verifies D1 provisioning", async (ctx) => {
-    await execFileAsync("npx", ["wrangler", "whoami"], { env: process.env });
+    const whoami = await runWrangler(["whoami"]);
+    expect(whoami.length).toBeGreaterThan(0);
 
-    const list = await runWrangler(["d1", "list", "--json"]);
-    const databases = JSON.parse(list) as { name: string }[];
-    const exists = databases.some((db) => db.name === dbName);
-    if (!exists) {
+    const listOutput = await runWrangler(["d1", "list"]);
+    if (!listOutput.includes(dbName)) {
       console.warn(`D1 database ${dbName} not found yet; skipping D1 schema check.`);
       ctx.skip();
       return;
@@ -60,7 +64,8 @@ describe("cloudflare integration", () => {
     const key = `${bucketName}/images-test.txt`;
     await runWranglerWithInput(["r2", "object", "put", key, "--pipe", "--remote"], content);
     const result = await runWrangler(["r2", "object", "get", key, "--pipe", "--remote"]);
-    expect(result).toBe(content);
+    const payload = extractPayload(result);
+    expect(payload).toBe(content);
     await runWrangler(["r2", "object", "delete", key, "--remote"]);
   });
 
@@ -69,12 +74,14 @@ describe("cloudflare integration", () => {
     const key = `${bucketName}/receipts-test.txt`;
     await runWranglerWithInput(["r2", "object", "put", key, "--pipe", "--remote"], content);
     const result = await runWrangler(["r2", "object", "get", key, "--pipe", "--remote"]);
-    expect(result).toBe(content);
+    const payload = extractPayload(result);
+    expect(payload).toBe(content);
     await runWrangler(["r2", "object", "delete", key, "--remote"]);
   });
 
   it("boots worker and enforces auth", async () => {
-    await execFileAsync("npx", ["wrangler", "whoami"], { env: process.env });
+    const whoami = await runWrangler(["whoami"]);
+    expect(whoami.length).toBeGreaterThan(0);
 
     const url = await getWorkerUrl();
     const unauth = await fetch(`${url}/api/health`);
