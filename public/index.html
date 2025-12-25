@@ -51,17 +51,17 @@
             <div class="inline-grid">
               <div class="kpi">
                 <p class="label">Net profit (MTD)</p>
-                <p class="value positive" id="kpi-profit">$0</p>
+                <p class="value positive">$12,480</p>
                 <p class="assist">Why is this number what it is?</p>
               </div>
               <div class="kpi">
                 <p class="label">Sales tax liability</p>
-                <p class="value warning" id="kpi-florida">$0</p>
+                <p class="value warning">$840</p>
                 <p class="assist">Florida liability only (non-eBay)</p>
               </div>
               <div class="kpi">
                 <p class="label">Drafts ready to list</p>
-                <p class="value" id="kpi-ready">0</p>
+                <p class="value">18</p>
                 <p class="assist">Ready to List filter active</p>
               </div>
             </div>
@@ -114,20 +114,9 @@
             </div>
           </div>
           <div class="panel">
-            <div class="form-grid">
-              <input type="text" id="fast-item-name" placeholder="Fast add item name" />
-              <input type="text" id="fast-item-bin" placeholder="Bin location" />
-              <button class="btn" id="fast-add-item">Fast add</button>
-            </div>
             <div class="searchable-dropdown">
               <input type="text" id="item-search" placeholder="Search items" />
               <div id="item-results" class="search-results"></div>
-            </div>
-            <div class="form-grid">
-              <label class="row">
-                <span>Upload item image</span>
-                <input type="file" id="item-image-upload" />
-              </label>
             </div>
             <div class="table">
               <div class="row header">
@@ -137,7 +126,27 @@
                 <span>Warnings</span>
                 <span></span>
               </div>
-              <div id="inventory-rows"></div>
+              <div class="row">
+                <span>Vintage Camera</span>
+                <span class="pill draft">Draft</span>
+                <span>Bin A2</span>
+                <span class="soft-warning">Missing SKU</span>
+                <span><button class="btn ghost small">Edit</button></span>
+              </div>
+              <div class="row">
+                <span>Mid-century Lamp</span>
+                <span class="pill listed">Listed</span>
+                <span>Bin B1</span>
+                <span class="soft-warning">Low photos</span>
+                <span><button class="btn ghost small">Edit</button></span>
+              </div>
+              <div class="row">
+                <span>Record Player</span>
+                <span class="pill ready">Ready</span>
+                <span>Bin C4</span>
+                <span class="soft-warning">No draft SEO</span>
+                <span><button class="btn ghost small">Edit</button></span>
+              </div>
             </div>
           </div>
         </section>
@@ -193,18 +202,6 @@
             </div>
           </div>
           <div class="panel">
-            <div class="form-grid">
-              <input type="text" id="expense-name" placeholder="Expense name" />
-              <input type="text" id="expense-category" placeholder="Category" />
-              <input type="number" id="expense-amount" placeholder="Amount" />
-              <button class="btn" id="save-expense">Save expense</button>
-            </div>
-            <div class="form-grid">
-              <label class="row">
-                <span>Upload receipt</span>
-                <input type="file" id="receipt-upload" />
-              </label>
-            </div>
             <div class="table">
               <div class="row header">
                 <span>Expense</span>
@@ -213,7 +210,20 @@
                 <span>Receipt</span>
                 <span></span>
               </div>
-              <div id="expense-rows"></div>
+              <div class="row">
+                <span>Shipping supplies</span>
+                <span>Operations</span>
+                <span>50 / 30 / 20</span>
+                <span class="pill ready">Uploaded</span>
+                <span><button class="btn ghost small">Edit</button></span>
+              </div>
+              <div class="row">
+                <span>Estate sale haul</span>
+                <span>Inventory</span>
+                <span>100 / 0 / 0</span>
+                <span class="soft-warning">Missing receipt</span>
+                <span><button class="btn ghost small">Edit</button></span>
+              </div>
             </div>
           </div>
         </section>
@@ -289,12 +299,10 @@
                   <li>Record Player: margin below 5%</li>
                   <li>Estate Lot #12: missing receipt</li>
                 </ul>
-                <button class="btn ghost small" id="export-year-end">Year-end CSV</button>
               </article>
               <article>
                 <h3>Closed period edits</h3>
                 <p class="warning">2 edits awaiting confirmation</p>
-                <button class="btn ghost small" id="export-florida-tax">Florida tax CSV</button>
               </article>
             </div>
           </div>

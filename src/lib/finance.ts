@@ -84,10 +84,6 @@ export function buildLotWrapper(lotId: string, items: LotItem[], notes?: string)
   };
 }
 
-export function calculateLotCostRollup(costs: number[]): number {
-  return roundCurrency(costs.reduce((sum, value) => sum + value, 0));
-}
-
 function roundCurrency(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }

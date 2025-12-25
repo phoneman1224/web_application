@@ -51,9 +51,3 @@ npm run test:cf
 - [ ] App enforces auth (fail closed).
 - [ ] CSV export works.
 - [ ] Reports drilldown works.
-
-## Phase B completion notes
-
-- Added IMAGES + RECEIPTS bindings with separate R2 usage paths.
-- Implemented API endpoints for inventory, expenses, sales, lots, reports, and settings.
-- Wired UI to live API calls for dashboard KPIs, inventory, expenses, and CSV exports.
