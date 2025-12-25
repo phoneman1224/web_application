@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyPromotion,
   buildLotWrapper,
+  calculateLotCostRollup,
   calculateFederalTaxEstimate,
   calculateFloridaSalesTaxLiability,
   calculateProfit,
@@ -39,6 +40,14 @@ describe("finance calculations", () => {
 
   it("splits expenses across allocations", () => {
     expect(splitExpense(100, [50, 30, 20])).toEqual([50, 30, 20]);
+  });
+
+  it("handles bulk expense splitting", () => {
+    expect(splitExpense(250, [2, 1, 1])).toEqual([125, 62.5, 62.5]);
+  });
+
+  it("rolls up lot costs", () => {
+    expect(calculateLotCostRollup([10.5, 20, 5.25])).toBe(35.75);
   });
 
   it("builds lot wrapper without pricing", () => {

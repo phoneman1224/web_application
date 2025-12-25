@@ -39,7 +39,7 @@ async function main() {
   const r2Bucket = ensureR2(r2Name);
   const base = await readFile("wrangler.toml", "utf-8");
 
-  const envBlock = `\n[env.${envTarget}]\nname = "${workerName}"\n[[env.${envTarget}.d1_databases]]\nbinding = "DB"\ndatabase_name = "${d1Name}"\ndatabase_id = "${d1Id}"\n[[env.${envTarget}.r2_buckets]]\nbinding = "RECEIPTS"\nbucket_name = "${r2Bucket}"\n`;
+  const envBlock = `\n[env.${envTarget}]\nname = "${workerName}"\n[[env.${envTarget}.d1_databases]]\nbinding = "DB"\ndatabase_name = "${d1Name}"\ndatabase_id = "${d1Id}"\n[[env.${envTarget}.r2_buckets]]\nbinding = "IMAGES"\nbucket_name = "${r2Bucket}"\n[[env.${envTarget}.r2_buckets]]\nbinding = "RECEIPTS"\nbucket_name = "${r2Bucket}"\n`;
 
   const generated = `${base.trim()}${envBlock}`;
   await writeFile("wrangler.generated.toml", generated);
