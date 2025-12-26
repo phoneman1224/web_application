@@ -18,6 +18,76 @@ const appState = {
   loading: false
 };
 
+const SERVICE_WORKER_VERSION = 'v1';
+const MUTATION_QUEUE_KEY = 'resellerOpsMutationQueue';
+let isSyncingQueuedMutations = false;
+
+function getMutationQueue() {
+  try {
+    return JSON.parse(localStorage.getItem(MUTATION_QUEUE_KEY)) || [];
+  } catch (error) {
+    console.warn('Failed to read offline queue:', error);
+    return [];
+  }
+}
+
+function setMutationQueue(queue) {
+  localStorage.setItem(MUTATION_QUEUE_KEY, JSON.stringify(queue));
+  updateOfflineBanner();
+}
+
+function createQueueId() {
+  return `mutation-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function enqueueMutation({ method, path, body }) {
+  const queue = getMutationQueue();
+  const entry = {
+    id: createQueueId(),
+    method,
+    path,
+    body,
+    timestamp: new Date().toISOString()
+  };
+  queue.push(entry);
+  setMutationQueue(queue);
+  return entry;
+}
+
+function updateOfflineBanner() {
+  const banner = document.getElementById('offline-banner');
+  if (!banner) return;
+
+  const messageEl = banner.querySelector('[data-offline-message]');
+  const actionButton = banner.querySelector('[data-offline-action]');
+  const queueCount = getMutationQueue().length;
+
+  if (!navigator.onLine) {
+    banner.classList.add('active');
+    messageEl.textContent = `Offline mode: ${queueCount} update${queueCount === 1 ? '' : 's'} queued.`;
+    actionButton.disabled = true;
+    return;
+  }
+
+  if (isSyncingQueuedMutations) {
+    banner.classList.add('active');
+    messageEl.textContent = `Syncing ${queueCount} queued update${queueCount === 1 ? '' : 's'}...`;
+    actionButton.disabled = true;
+    return;
+  }
+
+  if (queueCount > 0) {
+    banner.classList.add('active');
+    messageEl.textContent = `Back online. ${queueCount} update${queueCount === 1 ? '' : 's'} ready to sync.`;
+    actionButton.disabled = false;
+    return;
+  }
+
+  banner.classList.remove('active');
+  messageEl.textContent = '';
+  actionButton.disabled = true;
+}
+
 // ============================================================================
 // API CLIENT
 // ============================================================================
@@ -25,7 +95,15 @@ const appState = {
 const api = {
   baseUrl: '',
 
-  async request(method, path, body = null) {
+  async request(method, path, body = null, requestOptions = {}) {
+    const { skipQueue = false } = requestOptions;
+
+    if (method !== 'GET' && !skipQueue && !navigator.onLine) {
+      enqueueMutation({ method, path, body });
+      showToast('Offline: update queued for sync.');
+      return { queued: true };
+    }
+
     const options = {
       method,
       headers: {
@@ -51,12 +129,22 @@ const api = {
 
       return await response.json();
     } catch (error) {
+      if (method !== 'GET' && !skipQueue && !navigator.onLine) {
+        enqueueMutation({ method, path, body });
+        showToast('Offline: update queued for sync.');
+        return { queued: true };
+      }
       console.error('API Error:', error);
       throw error;
     }
   },
 
   async uploadFile(path, formData) {
+    if (!navigator.onLine) {
+      showToast('Offline: file uploads are disabled.');
+      throw new Error('Offline: file uploads are disabled');
+    }
+
     try {
       const response = await fetch(`${this.baseUrl}${path}`, {
         method: 'POST',
@@ -193,6 +281,88 @@ function showToast(message, undoCallback = null) {
   }
 
   setTimeout(() => toast.classList.remove('active'), 4000);
+}
+
+function initOfflineBanner() {
+  if (document.getElementById('offline-banner')) return;
+
+  const banner = document.createElement('div');
+  banner.id = 'offline-banner';
+  banner.className = 'offline-banner';
+  banner.innerHTML = `
+    <span data-offline-message></span>
+    <button class="btn ghost small" data-offline-action>Sync now</button>
+  `;
+
+  document.body.prepend(banner);
+
+  const actionButton = banner.querySelector('[data-offline-action]');
+  actionButton.addEventListener('click', () => replayQueuedMutations());
+
+  updateOfflineBanner();
+}
+
+function refreshCurrentScreen() {
+  switch (appState.currentScreen) {
+    case 'inventory':
+      loadInventory();
+      break;
+    case 'sales':
+      loadSales();
+      break;
+    case 'expenses':
+      loadExpenses();
+      break;
+    case 'lots':
+      loadLots();
+      break;
+    case 'pricing':
+      loadPricing();
+      break;
+    case 'dashboard':
+      loadDashboard();
+      break;
+    default:
+      break;
+  }
+}
+
+async function replayQueuedMutations() {
+  if (!navigator.onLine) {
+    updateOfflineBanner();
+    return;
+  }
+
+  const queue = getMutationQueue();
+  if (!queue.length) {
+    updateOfflineBanner();
+    return;
+  }
+
+  isSyncingQueuedMutations = true;
+  updateOfflineBanner();
+
+  let processed = 0;
+  while (queue.length) {
+    const entry = queue[0];
+    try {
+      await api.request(entry.method, entry.path, entry.body, { skipQueue: true });
+      queue.shift();
+      processed += 1;
+      setMutationQueue(queue);
+    } catch (error) {
+      showToast(`Sync paused: ${error.message}`);
+      break;
+    }
+  }
+
+  isSyncingQueuedMutations = false;
+  updateOfflineBanner();
+
+  if (processed > 0) {
+    showToast(`Synced ${processed} update${processed === 1 ? '' : 's'} from offline queue.`);
+    refreshCurrentScreen();
+  }
 }
 
 function formatCurrency(amount) {
@@ -1944,6 +2114,25 @@ async function handleAddPricingDraft() {
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
+  initOfflineBanner();
+  updateOfflineBanner();
+
+  window.addEventListener('online', () => {
+    showToast('Back online. Syncing queued updates.');
+    replayQueuedMutations();
+  });
+
+  window.addEventListener('offline', () => {
+    showToast('You are offline. Updates will be queued.');
+    updateOfflineBanner();
+  });
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register(`/sw.js?v=${SERVICE_WORKER_VERSION}`)
+      .catch((error) => console.warn('Service worker registration failed:', error));
+  }
+
   // Setup navigation
   document.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', () => {

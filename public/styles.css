@@ -33,6 +33,35 @@ body {
   color: var(--text);
 }
 
+.offline-banner {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 24px;
+  background: #fbe9d2;
+  color: #6b3f00;
+  border-bottom: 1px solid rgba(107, 63, 0, 0.2);
+  font-weight: 600;
+}
+
+body.theme-dark .offline-banner {
+  background: #3a2c1b;
+  color: #f9d8a5;
+  border-bottom-color: rgba(249, 216, 165, 0.2);
+}
+
+.offline-banner.active {
+  display: flex;
+}
+
+.offline-banner button {
+  border-color: currentColor;
+}
+
 .app-shell {
   display: grid;
   grid-template-columns: 240px 1fr;
