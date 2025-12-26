@@ -5,3 +5,6 @@ assets = { directory = "./public", binding = "ASSETS" }
 
 [vars]
 APP_NAME = "Reseller Ops"
+
+[ai]
+binding = "AI"
