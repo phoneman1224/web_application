@@ -17,6 +17,8 @@ jobs:
           node-version: "20"
           cache: "npm"
       - run: npm ci
+- name: Verify Wrangler v4
+  run: npx wrangler --version | grep "^npx wrangler 4"
       - run: npm test
       - name: Integration tests (when secrets exist)
         run: npm run test:cf
@@ -38,6 +40,8 @@ jobs:
           node-version: "20"
           cache: "npm"
       - run: npm ci
+- name: Verify Wrangler v4
+  run: npx wrangler --version | grep "^npx wrangler 4"
       - run: npm test
       - name: Provision TEST resources
         run: node scripts/provision-cf.mjs --env test
