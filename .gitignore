@@ -1,3 +1,9 @@
 node_modules/
 node_modules/
 .wrangler/
+node_modules/
+.wrangler/
+dist/
+.env
+wrangler.generated.toml
+integration-test-download.txt
