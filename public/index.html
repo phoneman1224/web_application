@@ -391,6 +391,420 @@
       <button id="toast-undo" class="btn ghost small">Undo</button>
     </div>
 
+    <!-- Batch Actions Bar -->
+    <div class="batch-actions-bar" id="batch-actions-bar">
+      <div class="batch-info">
+        <span id="batch-count">0 selected</span>
+        <button class="btn ghost tiny" id="batch-clear">Clear</button>
+      </div>
+      <div class="batch-buttons">
+        <button class="btn ghost small" id="batch-export">Export Selected</button>
+        <button class="btn ghost small" id="batch-category">Update Category</button>
+        <button class="btn ghost small" id="batch-status">Update Status</button>
+        <button class="btn ghost small danger" id="batch-delete">Delete Selected</button>
+      </div>
+    </div>
+
+    <!-- Modal Overlay System -->
+    <div class="modal-overlay" id="modal-overlay">
+      <div class="modal" id="modal">
+        <div class="modal-header">
+          <h2 id="modal-title">Modal Title</h2>
+          <button class="btn ghost small" id="modal-close">&times;</button>
+        </div>
+        <div class="modal-body" id="modal-body">
+          <!-- Dynamic content loaded here -->
+        </div>
+        <div class="modal-footer" id="modal-footer">
+          <button class="btn ghost" id="modal-cancel">Cancel</button>
+          <button class="btn primary" id="modal-save">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ITEM FORM TEMPLATE -->
+    <template id="template-item-form">
+      <form id="item-form" class="form">
+        <input type="hidden" name="id" />
+
+        <div class="form-row">
+          <label>
+            <span>Item Name <span class="required">*</span></span>
+            <input type="text" name="name" placeholder="Vintage Camera" required />
+          </label>
+        </div>
+
+        <div class="form-row two-col">
+          <label>
+            <span>SKU <span class="tooltip" data-tip="Optional unique identifier">ⓘ</span></span>
+            <input type="text" name="sku" placeholder="CAM-001" />
+            <span class="field-hint" id="sku-hint"></span>
+          </label>
+          <label>
+            <span>Cost <span class="tooltip" data-tip="What you paid (defaults to $0)">ⓘ</span></span>
+            <input type="number" name="cost" step="0.01" min="0" value="0" />
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>
+            <span>Description</span>
+            <textarea name="description" rows="3" placeholder="Item details..."></textarea>
+          </label>
+          <button type="button" class="btn ghost small ai-btn" id="enhance-description-btn">
+            ✨ Enhance with AI
+          </button>
+        </div>
+
+        <div class="form-row two-col">
+          <label>
+            <span>Category</span>
+            <select name="category" id="item-category">
+              <option value="">-- Select --</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Clothing">Clothing</option>
+              <option value="Books">Books</option>
+              <option value="Toys">Toys</option>
+              <option value="Home & Garden">Home & Garden</option>
+              <option value="Collectibles">Collectibles</option>
+              <option value="Jewelry">Jewelry</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <div class="ai-suggestion-box" id="ai-category-suggestion" style="display:none;">
+            <span class="ai-label">AI Suggestion:</span>
+            <span class="ai-value" id="ai-category-value"></span>
+            <button type="button" class="btn ghost tiny" id="apply-ai-category">Apply</button>
+          </div>
+        </div>
+
+        <div class="form-row two-col">
+          <label>
+            <span>Status</span>
+            <select name="status">
+              <option value="Unlisted">Unlisted</option>
+              <option value="Draft">Draft</option>
+              <option value="Listed">Listed</option>
+              <option value="Sold">Sold</option>
+            </select>
+          </label>
+          <label>
+            <span>Bin Location <span class="tooltip" data-tip="Where this item is stored">ⓘ</span></span>
+            <input type="text" name="bin_location" placeholder="A2" />
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>
+            <span>Photos</span>
+            <input type="file" id="photo-upload" accept="image/*" multiple />
+          </label>
+          <div class="photo-preview-grid" id="photo-preview"></div>
+          <button type="button" class="btn ghost small ai-btn" id="analyze-photo-btn" disabled>
+            ✨ Analyze Photo with AI
+          </button>
+        </div>
+      </form>
+    </template>
+
+    <!-- SALE FORM TEMPLATE -->
+    <template id="template-sale-form">
+      <form id="sale-form" class="form">
+        <input type="hidden" name="id" />
+
+        <div class="form-row two-col">
+          <label>
+            <span>Order Number</span>
+            <input type="text" name="order_number" placeholder="EV-0192" />
+          </label>
+          <label>
+            <span>Platform <span class="required">*</span></span>
+            <select name="platform" required>
+              <option value="">-- Select --</option>
+              <option value="eBay">eBay</option>
+              <option value="Shopify">Shopify</option>
+              <option value="Facebook">Facebook Marketplace</option>
+              <option value="Mercari">Mercari</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>
+            <span>Sale Date <span class="required">*</span></span>
+            <input type="date" name="sale_date" required />
+          </label>
+        </div>
+
+        <div class="form-row two-col">
+          <label>
+            <span>Gross Amount <span class="required">*</span></span>
+            <input type="number" name="gross_amount" step="0.01" min="0" required />
+          </label>
+          <label>
+            <span>Platform Fees</span>
+            <input type="number" name="platform_fees" step="0.01" min="0" value="0" />
+          </label>
+        </div>
+
+        <div class="form-row two-col">
+          <label>
+            <span>Promotion Discount <span class="tooltip" data-tip="Discount applied by platform">ⓘ</span></span>
+            <input type="number" name="promotion_discount" step="0.01" min="0" value="0" />
+          </label>
+          <label>
+            <span>Shipping Cost</span>
+            <input type="number" name="shipping_cost" step="0.01" min="0" value="0" />
+          </label>
+        </div>
+
+        <div class="form-row two-col">
+          <label>
+            <span>Florida Tax Collected <span class="tooltip" data-tip="Tax YOU collected (non-eBay)">ⓘ</span></span>
+            <input type="number" name="florida_tax_collected" step="0.01" min="0" value="0" />
+          </label>
+          <label>
+            <span>eBay Tax Collected <span class="tooltip" data-tip="Tax eBay collected (informational)">ⓘ</span></span>
+            <input type="number" name="ebay_tax_collected" step="0.01" min="0" value="0" />
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>
+            <span class="section-label">Items Sold <span class="required">*</span></span>
+          </label>
+          <div class="item-picker" id="sale-items-picker">
+            <!-- Dynamic item selection -->
+          </div>
+          <button type="button" class="btn ghost small" id="add-sale-item">+ Add Item</button>
+        </div>
+
+        <div class="form-row auto-calc-box">
+          <p><strong>Auto-calculated:</strong></p>
+          <p>Profit: <span id="calc-profit">$0.00</span></p>
+          <p>Federal Tax Estimate: <span id="calc-tax">$0.00</span></p>
+        </div>
+      </form>
+    </template>
+
+    <!-- EXPENSE FORM TEMPLATE -->
+    <template id="template-expense-form">
+      <form id="expense-form" class="form">
+        <input type="hidden" name="id" />
+
+        <div class="form-row">
+          <label>
+            <span>Expense Name <span class="required">*</span></span>
+            <input type="text" name="name" placeholder="Shipping supplies" required />
+          </label>
+        </div>
+
+        <div class="form-row two-col">
+          <label>
+            <span>Category <span class="required">*</span></span>
+            <select name="category" id="expense-category" required>
+              <option value="">-- Select --</option>
+              <option value="Inventory">Inventory</option>
+              <option value="Shipping">Shipping</option>
+              <option value="Packaging">Packaging</option>
+              <option value="Office">Office Supplies</option>
+              <option value="Software">Software</option>
+              <option value="Vehicle">Vehicle</option>
+              <option value="Marketing">Marketing</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label>
+            <span>Amount <span class="required">*</span></span>
+            <input type="number" name="amount" step="0.01" min="0" required />
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>
+            <span>Expense Date <span class="required">*</span></span>
+            <input type="date" name="expense_date" required />
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label class="section-label">
+            <span>Expense Split <span class="tooltip" data-tip="Allocate percentages (must sum to 100)">ⓘ</span></span>
+          </label>
+          <div class="split-inputs">
+            <label>
+              <span>Inventory %</span>
+              <input type="number" name="split_inventory" min="0" max="100" value="0" step="1" />
+            </label>
+            <label>
+              <span>Operations %</span>
+              <input type="number" name="split_operations" min="0" max="100" value="0" step="1" />
+            </label>
+            <label>
+              <span>Other %</span>
+              <input type="number" name="split_other" min="0" max="100" value="0" step="1" />
+            </label>
+          </div>
+          <p class="field-hint" id="split-hint">Total: <span id="split-total">0</span>%</p>
+          <button type="button" class="btn ghost small ai-btn" id="suggest-split-btn">
+            ✨ AI Suggest Split
+          </button>
+        </div>
+
+        <div class="form-row" id="vehicle-deduction-section" style="display:none;">
+          <label class="section-label">
+            <span>Vehicle Deduction <span class="tooltip" data-tip="Choose mileage OR actual, not both">ⓘ</span></span>
+          </label>
+          <div class="two-col">
+            <label>
+              <span>Mileage</span>
+              <input type="number" name="vehicle_mileage" step="0.1" min="0" placeholder="Miles" />
+            </label>
+            <label>
+              <span>Actual Expenses</span>
+              <input type="number" name="vehicle_actual" step="0.01" min="0" placeholder="$0.00" />
+            </label>
+          </div>
+          <p class="field-hint warning">Note: Cannot use both mileage and actual expenses</p>
+        </div>
+
+        <div class="form-row">
+          <label>
+            <span>Receipt</span>
+            <input type="file" id="receipt-upload" accept="image/*,application/pdf" />
+          </label>
+        </div>
+      </form>
+    </template>
+
+    <!-- LOT FORM TEMPLATE -->
+    <template id="template-lot-form">
+      <form id="lot-form" class="form">
+        <input type="hidden" name="id" />
+
+        <div class="form-row">
+          <label>
+            <span>Lot Name <span class="required">*</span></span>
+            <input type="text" name="name" placeholder="Vintage Audio Bundle" required />
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>
+            <span>Notes</span>
+            <textarea name="notes" rows="3" placeholder="Description of lot..."></textarea>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label class="section-label">
+            <span>Items in Lot</span>
+          </label>
+          <div class="item-multi-select" id="lot-items-picker">
+            <!-- Dynamic multi-select -->
+          </div>
+        </div>
+
+        <div class="form-row auto-calc-box">
+          <p><strong>Total Cost (rolled up):</strong> <span id="lot-total-cost">$0.00</span></p>
+          <p class="muted">Cost calculated from selected items</p>
+        </div>
+      </form>
+    </template>
+
+    <!-- PRICING DRAFT FORM TEMPLATE -->
+    <template id="template-pricing-form">
+      <form id="pricing-form" class="form">
+        <input type="hidden" name="id" />
+
+        <div class="form-row">
+          <label>
+            <span>Price For</span>
+          </label>
+          <div class="radio-group">
+            <label>
+              <input type="radio" name="price_type" value="item" checked /> Single Item
+            </label>
+            <label>
+              <input type="radio" name="price_type" value="lot" /> Lot/Bundle
+            </label>
+          </div>
+        </div>
+
+        <div class="form-row" id="item-select-row">
+          <label>
+            <span>Select Item <span class="required">*</span></span>
+            <select name="item_id" id="pricing-item-select">
+              <option value="">-- Select Item --</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="form-row" id="lot-select-row" style="display:none;">
+          <label>
+            <span>Select Lot <span class="required">*</span></span>
+            <select name="lot_id" id="pricing-lot-select">
+              <option value="">-- Select Lot --</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>
+            <span>Suggested Price</span>
+            <input type="number" name="suggested_price" step="0.01" min="0" placeholder="0.00" />
+          </label>
+          <button type="button" class="btn ghost small ai-btn" id="suggest-price-btn">
+            ✨ AI Suggest Price
+          </button>
+          <div class="ai-suggestion-box" id="ai-price-suggestion" style="display:none;">
+            <p><strong>AI Recommendation:</strong></p>
+            <p>Range: $<span id="ai-price-min">0</span> - $<span id="ai-price-max">0</span></p>
+            <p>Suggested: $<span id="ai-price-suggested">0</span></p>
+            <p class="muted" id="ai-price-reasoning"></p>
+            <button type="button" class="btn ghost tiny" id="apply-ai-price">Apply Suggested</button>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>
+            <span>SEO Title (80 char max)</span>
+            <input type="text" name="seo_title" maxlength="80" placeholder="eBay listing title..." />
+            <p class="field-hint"><span id="title-char-count">0</span>/80</p>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>
+            <span>SEO Description</span>
+            <textarea name="seo_description" rows="5" placeholder="eBay listing description..."></textarea>
+          </label>
+          <button type="button" class="btn ghost small ai-btn" id="generate-seo-btn">
+            ✨ Generate SEO with AI
+          </button>
+        </div>
+
+        <div class="form-row" id="ai-seo-result" style="display:none;">
+          <div class="ai-suggestion-box">
+            <p><strong>AI-Generated SEO:</strong></p>
+            <p><strong>Title:</strong> <span id="ai-seo-title"></span></p>
+            <p><strong>Description:</strong></p>
+            <p id="ai-seo-description" class="seo-preview"></p>
+            <p><strong>Keywords:</strong> <span id="ai-seo-keywords"></span></p>
+            <div class="confidence-bar">
+              <span>Confidence:</span>
+              <div class="progress-bar">
+                <div class="progress-fill" id="ai-seo-confidence" style="width: 0%"></div>
+              </div>
+              <span id="ai-seo-confidence-text">0%</span>
+            </div>
+            <button type="button" class="btn ghost tiny" id="apply-ai-seo">Apply SEO</button>
+          </div>
+        </div>
+      </form>
+    </template>
+
     <script src="/app.js" type="module"></script>
   </body>
 </html>

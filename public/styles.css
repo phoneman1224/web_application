@@ -268,6 +268,16 @@ body {
   font-size: 0.7rem;
 }
 
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.2s;
+}
+
+.sortable:hover {
+  color: var(--accent);
+}
+
 .pill {
   padding: 4px 10px;
   border-radius: 999px;
@@ -403,6 +413,29 @@ input[type="color"] {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
+.card {
+  background: var(--panel);
+  padding: 20px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.card h4 {
+  margin-bottom: 12px;
+  font-size: 1.1rem;
+}
+
+.card p {
+  margin: 8px 0;
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
 .toast {
   position: fixed;
   bottom: 24px;
@@ -436,6 +469,453 @@ input[type="color"] {
   color: var(--negative);
 }
 
+/* ============================================================================
+   MODAL SYSTEM
+   ============================================================================ */
+
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.modal-overlay.active {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: var(--panel);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform: scale(0.9);
+  transition: all 0.2s ease;
+}
+
+.modal.active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--muted);
+}
+
+.modal-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 20px 24px;
+  border-top: 1px solid var(--muted);
+}
+
+/* ============================================================================
+   FORM STYLES
+   ============================================================================ */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-row.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+}
+
+.form label > span {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.form input[type="text"],
+.form input[type="number"],
+.form input[type="date"],
+.form input[type="color"],
+.form input[type="email"],
+.form input[type="password"],
+.form select,
+.form textarea {
+  padding: 10px 14px;
+  border: 1px solid var(--muted);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.form input[type="text"]:focus,
+.form input[type="number"]:focus,
+.form input[type="date"]:focus,
+.form select:focus,
+.form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.form input[type="checkbox"],
+.form input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.form input[type="file"] {
+  padding: 8px;
+  border: 1px dashed var(--muted);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.form textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.required {
+  color: var(--negative);
+}
+
+.field-hint {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.field-hint.warning {
+  color: var(--warning);
+}
+
+.section-label {
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.radio-group {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.radio-group label {
+  flex-direction: row;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.tooltip {
+  cursor: help;
+  color: var(--accent);
+  font-size: 0.9em;
+}
+
+/* ============================================================================
+   AI-SPECIFIC STYLES
+   ============================================================================ */
+
+.ai-btn {
+  background: linear-gradient(135deg, var(--accent), #8b5cf6);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.ai-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.ai-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ai-suggestion-box {
+  background: linear-gradient(135deg, rgba(91, 93, 255, 0.1), rgba(139, 92, 246, 0.1));
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 12px;
+}
+
+.ai-label {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.ai-value {
+  font-size: 0.95rem;
+  margin-left: 8px;
+}
+
+.confidence-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--bg);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #8b5cf6);
+  transition: width 0.3s ease;
+}
+
+.seo-preview {
+  background: var(--bg);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* ============================================================================
+   FORM COMPONENTS
+   ============================================================================ */
+
+.photo-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.photo-preview-item {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--muted);
+}
+
+.picker-item {
+  display: grid;
+  grid-template-columns: 2fr 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.item-picker,
+.item-multi-select {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkbox-list label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--bg);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.checkbox-list label:hover {
+  background: var(--panel);
+}
+
+.split-inputs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.auto-calc-box {
+  background: linear-gradient(135deg, rgba(14, 159, 110, 0.1), rgba(14, 159, 110, 0.05));
+  border: 1px solid var(--positive);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.auto-calc-box p {
+  margin: 4px 0;
+}
+
+.auto-calc-box strong {
+  color: var(--positive);
+}
+
+/* ============================================================================
+   KEYBOARD SHORTCUTS HELP
+   ============================================================================ */
+
+.shortcuts-help {
+  padding: 8px 0;
+}
+
+.shortcuts-help h3 {
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+}
+
+.shortcuts-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.shortcuts-table tr {
+  border-bottom: 1px solid var(--muted);
+}
+
+.shortcuts-table td {
+  padding: 12px 8px;
+}
+
+.shortcut-key {
+  font-family: 'Monaco', 'Courier New', monospace;
+  background: var(--bg);
+  padding: 6px 12px !important;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--accent);
+}
+
+kbd {
+  font-family: 'Monaco', 'Courier New', monospace;
+  background: var(--bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  border: 1px solid var(--muted);
+}
+
+/* ============================================================================
+   BATCH ACTIONS BAR
+   ============================================================================ */
+
+.batch-actions-bar {
+  position: fixed;
+  bottom: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  z-index: 50;
+  transition: bottom 0.3s ease;
+  min-width: 600px;
+}
+
+.batch-actions-bar.active {
+  bottom: 0;
+}
+
+.batch-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+}
+
+.batch-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn.danger {
+  color: var(--negative);
+}
+
+.btn.danger:hover {
+  background: var(--negative);
+  color: white;
+}
+
+.checkbox-col {
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkbox-col input[type="checkbox"] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
 @media (max-width: 900px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -464,5 +944,37 @@ input[type="color"] {
 
   .row {
     grid-template-columns: 1fr;
+  }
+
+  .modal {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .form-row.two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .split-inputs {
+    grid-template-columns: 1fr;
+  }
+
+  .batch-actions-bar {
+    min-width: 100%;
+    left: 0;
+    transform: none;
+    border-radius: 0;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .batch-buttons {
+    width: 100%;
+  }
+
+  .batch-buttons button {
+    flex: 1;
   }
 }
