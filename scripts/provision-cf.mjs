@@ -1,50 +1,42 @@
-import { readFile, writeFile } from "node:fs/promises";
-import { spawnSync } from "node:child_process";
+// scripts/provision-cf.mjs
+import { execSync } from "node:child_process";
 
-const envTarget = process.argv.includes("--env")
-  ? process.argv[process.argv.indexOf("--env") + 1]
-  : "test";
+const envArg = process.argv.find((a) => a === "--env");
+const env = envArg ? process.argv[process.argv.indexOf(envArg) + 1] : "test";
 
-const d1Name = envTarget === "prod" ? "reseller_app_prod" : "reseller_app_test";
-const r2Name = envTarget === "prod" ? "reseller-app-prod" : "reseller-app-test";
-const workerName = envTarget === "prod" ? "reseller-app" : "reseller-app-test";
+if (!["test", "preview", "production"].includes(env)) {
+  console.error("Invalid env. Use --env test|preview|production");
+  process.exit(1);
+}
 
-function runWrangler(args) {
-  const result = spawnSync("npx", ["wrangler", ...args], { encoding: "utf-8" });
-  if (result.status !== 0) {
-    console.error(result.stderr || result.stdout);
-    process.exit(result.status ?? 1);
+const D1_NAME = env === "test" ? "reseller_app_test" : "reseller_app";
+const R2_BUCKET = env === "test" ? "reseller-app-test" : "reseller-app";
+
+function run(cmd) {
+  try {
+    execSync(cmd, { stdio: "inherit" });
+  } catch (err) {
+    // Ignore "already exists" errors
+    const msg = String(err?.stderr || err?.message || "");
+    if (
+      msg.includes("already exists") ||
+      msg.includes("Duplicate") ||
+      msg.includes("exists")
+    ) {
+      console.log("ℹ️  Resource already exists, continuing...");
+      return;
+    }
+    throw err;
   }
-  return result.stdout.trim();
 }
 
-function ensureD1(name) {
-  const list = JSON.parse(runWrangler(["d1", "list", "--json"]));
-  const existing = list.find((db) => db.name === name);
-  if (existing) return existing.uuid;
-  const created = JSON.parse(runWrangler(["d1", "create", name, "--json"]));
-  return created.uuid;
-}
+console.log(` Provisioning Cloudflare resources for env: ${env}`);
 
-function ensureR2(name) {
-  const list = JSON.parse(runWrangler(["r2", "bucket", "list", "--json"]));
-  const existing = list.find((bucket) => bucket.name === name);
-  if (existing) return existing.name;
-  const created = JSON.parse(runWrangler(["r2", "bucket", "create", name, "--json"]));
-  return created.name;
-}
+console.log(`️  Ensuring D1 database: ${D1_NAME}`);
+run(`npx wrangler d1 create ${D1_NAME}`);
 
-async function main() {
-  const d1Id = ensureD1(d1Name);
-  const r2Bucket = ensureR2(r2Name);
-  const base = await readFile("wrangler.toml", "utf-8");
+console.log(` Ensuring R2 bucket: ${R2_BUCKET}`);
+run(`npx wrangler r2 bucket create ${R2_BUCKET}`);
 
-  const envBlock = `\n[env.${envTarget}]\nname = "${workerName}"\n[[env.${envTarget}.d1_databases]]\nbinding = "DB"\ndatabase_name = "${d1Name}"\ndatabase_id = "${d1Id}"\n[[env.${envTarget}.r2_buckets]]\nbinding = "RECEIPTS"\nbucket_name = "${r2Bucket}"\n`;
+console.log("✅ Provisioning complete.");
 
-  const generated = `${base.trim()}${envBlock}`;
-  await writeFile("wrangler.generated.toml", generated);
-
-  console.log(`Provisioned ${envTarget}: D1 ${d1Name} (${d1Id}), R2 ${r2Bucket}`);
-}
-
-await main();
