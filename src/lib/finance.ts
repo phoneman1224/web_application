@@ -47,11 +47,28 @@ export function calculateFloridaSalesTaxLiability(
 }
 
 export function splitExpense(amount: number, allocations: number[]): number[] {
-  const total = allocations.reduce((sum, value) => sum + value, 0);
+  const normalized = allocations.map((value) => Math.max(0, value));
+  const total = normalized.reduce((sum, value) => sum + value, 0);
   if (total <= 0) {
     return allocations.map(() => 0);
   }
-  return allocations.map((value) => roundCurrency((amount * value) / total));
+
+  const amountCents = Math.round(amount * 100);
+  const sign = amountCents < 0 ? -1 : 1;
+  const absoluteCents = Math.abs(amountCents);
+  const rawShares = normalized.map((value) => (absoluteCents * value) / total);
+  const floored = rawShares.map((share) => Math.floor(share));
+  let remainder = absoluteCents - floored.reduce((sum, value) => sum + value, 0);
+  const order = rawShares
+    .map((share, index) => ({ index, fraction: share - Math.floor(share) }))
+    .sort((a, b) => b.fraction - a.fraction);
+
+  for (let i = 0; i < order.length && remainder > 0; i += 1) {
+    floored[order[i].index] += 1;
+    remainder -= 1;
+  }
+
+  return floored.map((value) => (value * sign) / 100);
 }
 
 export function applyPromotion(basePrice: number, promotionRate: number): number {

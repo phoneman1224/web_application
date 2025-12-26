@@ -41,6 +41,10 @@ describe("finance calculations", () => {
     expect(splitExpense(100, [50, 30, 20])).toEqual([50, 30, 20]);
   });
 
+  it("splits expenses with rounding remainder", () => {
+    expect(splitExpense(100, [1, 1, 1])).toEqual([33.34, 33.33, 33.33]);
+  });
+
   it("builds lot wrapper without pricing", () => {
     const lot = buildLotWrapper("lot-1", [
       { itemId: "itm-1", quantity: 2 },
