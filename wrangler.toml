@@ -1,0 +1,7 @@
+name = "reseller-app"
+main = "src/worker.ts"
+compatibility_date = "2024-04-01"
+assets = { directory = "./public", binding = "ASSETS" }
+
+[vars]
+APP_NAME = "Reseller Ops"

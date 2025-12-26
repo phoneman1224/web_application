@@ -1,0 +1,29 @@
+{
+  "name": "reseller-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --config wrangler.toml",
+    "test": "vitest run",
+    "test:cf": "node scripts/run-cf-tests.mjs",
+    "lint": "npm run test",
+    "deploy:test": "wrangler deploy --env test --config wrangler.generated.toml",
+    "deploy:prod": "wrangler deploy --env prod --config wrangler.generated.toml"
+  },
+  "devDependencies": {
+    "@cloudflare/kv-asset-handler": "^0.4.0",
+    "@cloudflare/unenv-preset": "^2.7.13",
+    "@cloudflare/workers-types": "^4.20240229.0",
+    "cookie": "^0.7.2",
+    "esbuild": "^0.25.0",
+    "miniflare": "^4.20251217.0",
+    "typescript": "^5.4.2",
+    "undici": "^6.0.0",
+    "unenv": "2.0.0-rc.24",
+    "vitest": "^1.6.0",
+    "workerd": "^1.20251217.0",
+    "wrangler": "^4.0.0",
+    "youch": "^3.3.4"
+  }
+}
