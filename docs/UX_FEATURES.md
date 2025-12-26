@@ -447,10 +447,11 @@ Reseller Ops is fully mobile-optimized and can be installed as a Progressive Web
 - Faster loading (cached assets)
 - Works like a native app
 
-**Offline Support (Coming Soon):**
-- View cached data offline
-- Queue operations for sync when online
-- Service worker for background sync
+**Offline Support:**
+- App shell assets are cached for offline launch
+- GET requests use cached responses if the network is unavailable
+- Create/update/delete actions are queued locally and synced when you reconnect
+- Offline banner shows connection state and queued updates, with a manual "Sync now" action
 
 ---
 

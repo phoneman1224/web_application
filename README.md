@@ -47,7 +47,7 @@ A complete, feature-rich web application for managing your eBay reselling busine
 - **Fully Responsive** - Card layouts on mobile, table views on desktop
 - **Touch-Friendly** - 44px minimum tap targets, large form fields
 - **PWA Support** - Install on home screen, full-screen experience
-- **Offline-Ready** - Cached assets, service worker (coming soon: offline mode)
+- **Offline-Ready** - Cached app shell, offline banner, queued updates synced on reconnect
 
 ### Security & Authentication
 - **Cloudflare Zero Trust** - Enterprise-grade authentication with fail-closed security
