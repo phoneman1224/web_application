@@ -8,30 +8,69 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
-      - name: CI TRUTH PROBE — SHOW CONTEXT
-        run: |
-          echo "=== CI CONTEXT ==="
-          echo "Commit:"
-          git rev-parse HEAD
-          echo
-          echo "Workflow hash:"
-          sha256sum .github/workflows/ci.yml
-          echo
-          echo "Wrangler resolution:"
-          which wrangler || true
-          which npx || true
-          echo
-          echo "Wrangler version (direct):"
-          wrangler --version || true
-          echo
-          echo "Wrangler version (npx):"
-          npx wrangler --version || true
-          echo
-          echo "Node version:"
-          node --version
-          echo
-          echo "=== END PROBE ==="
-          exit 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Wrangler v4 (local)
+        run: npm exec wrangler --version
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Integration tests (when secrets exist)
+        run: npm run test:cf
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WRANGLER_SEND_METRICS: "false"
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    needs: build-test
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify Wrangler v4 (local)
+        run: npm exec wrangler --version
+
+      - name: Provision TEST resources
+        run: node scripts/provision-cf.mjs --env test
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WRANGLER_SEND_METRICS: "false"
+
+      - name: Apply TEST migrations
+        run: npm exec wrangler d1 migrations apply reseller_app_test --remote --config wrangler.generated.toml
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WRANGLER_SEND_METRICS: "false"
+
+      - name: Deploy TEST worker
+        run: npm exec wrangler deploy --env test --config wrangler.generated.toml
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WRANGLER_SEND_METRICS: "false"
