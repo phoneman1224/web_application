@@ -634,6 +634,9 @@ label.row {
   font-size: 0.95rem;
   font-family: inherit;
   transition: border-color 0.2s;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .form input[type="text"]:focus,
@@ -1133,6 +1136,22 @@ kbd {
     overflow-x: hidden;
   }
 
+  /* CRITICAL FIX: Override batch-actions-bar fixed width */
+  .batch-actions-bar {
+    min-width: 100% !important;
+    max-width: 100%;
+    left: 0;
+    right: 0;
+    transform: none;
+    padding: 12px 16px;
+    flex-wrap: wrap;
+  }
+
+  .batch-buttons {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
   /* Make navigation cards larger and easier to tap on phones */
   .sidebar nav {
     grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
@@ -1187,7 +1206,14 @@ kbd {
   /* Full-width search field */
   .search-field {
     width: 100%;
+    max-width: 100%;
     order: 3;
+  }
+
+  .search-field input {
+    width: 100%;
+    max-width: 100%;
+    font-size: 0.875rem;
   }
 
   /* Modal with padding */
@@ -1214,6 +1240,15 @@ kbd {
   /* Photo preview grid smaller */
   .photo-preview-grid {
     grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+
+  /* Universal overflow prevention */
+  .panel,
+  .screen,
+  .screen-header,
+  .kpi,
+  .form-row {
+    max-width: 100%;
   }
 
   /* Dropdown menus responsive */
