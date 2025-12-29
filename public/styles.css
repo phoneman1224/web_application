@@ -598,6 +598,17 @@ input[type="color"] {
   font-size: 0.9rem;
 }
 
+label.row {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 10px 12px;
+  background: rgba(91, 93, 255, 0.05);
+  border-radius: 12px;
+}
+
 .form label > span {
   font-weight: 500;
   color: var(--text);
