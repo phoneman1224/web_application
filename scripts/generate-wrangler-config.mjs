@@ -96,8 +96,7 @@ APP_NAME = "Reseller Ops"
 # ============================================
 [env.test]
 name = "reseller-app-test"
-# route = { pattern = "test.reseller.example.com", zone_name = "example.com" }
-# Route commented out - worker will be accessible at reseller-app-test.<subdomain>.workers.dev
+route = { pattern = "test.markbrian5178.org/*", zone_name = "markbrian5178.org" }
 
 # Test D1 Database
 ${testDbId ? `[[env.test.d1_databases]]
@@ -118,8 +117,7 @@ ENVIRONMENT = "test"
 # ============================================
 [env.production]
 name = "reseller-app"
-# route = { pattern = "app.reseller.example.com", zone_name = "example.com" }
-# Route commented out - worker will be accessible at reseller-app.<subdomain>.workers.dev
+route = { pattern = "app.markbrian5178.org/*", zone_name = "markbrian5178.org" }
 
 # Production D1 Database
 ${prodDbId ? `[[env.production.d1_databases]]

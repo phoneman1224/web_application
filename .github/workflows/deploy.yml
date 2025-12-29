@@ -118,7 +118,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment:
       name: test
-      url: https://test.reseller.example.com
+      url: https://test.markbrian5178.org
 
     steps:
       - name: Checkout code
@@ -165,7 +165,7 @@ jobs:
       - name: Verify TEST deployment
         run: |
           echo "✅ TEST deployment complete"
-          echo "   URL: https://test.reseller.example.com"
+          echo "   URL: https://test.markbrian5178.org"
 
   # ============================================
   # Deploy to PRODUCTION Environment
@@ -177,7 +177,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment:
       name: production
-      url: https://app.reseller.example.com
+      url: https://app.markbrian5178.org
 
     steps:
       - name: Checkout code
@@ -224,7 +224,7 @@ jobs:
       - name: Verify PRODUCTION deployment
         run: |
           echo "✅ PRODUCTION deployment complete"
-          echo "   URL: https://app.reseller.example.com"
+          echo "   URL: https://app.markbrian5178.org"
           echo ""
           echo "🎉 Deployment pipeline complete!"
 
@@ -253,8 +253,8 @@ jobs:
           if [ "${{ needs.deploy-production.result }}" == "success" ]; then
             echo "✅ **All deployments successful!**" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "- TEST: https://test.reseller.example.com" >> $GITHUB_STEP_SUMMARY
-            echo "- PRODUCTION: https://app.reseller.example.com" >> $GITHUB_STEP_SUMMARY
+            echo "- TEST: https://test.markbrian5178.org" >> $GITHUB_STEP_SUMMARY
+            echo "- PRODUCTION: https://app.markbrian5178.org" >> $GITHUB_STEP_SUMMARY
           else
             echo "⚠️ **Deployment pipeline incomplete**" >> $GITHUB_STEP_SUMMARY
           fi
