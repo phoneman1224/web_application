@@ -49,6 +49,97 @@ body.theme-dark {
   --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.4), 0 30px 60px rgba(255, 123, 84, 0.15);
 }
 
+/* ============================================================================
+   COLOR THEME VARIANTS - User selectable
+   ============================================================================ */
+
+/* Theme 1: Modern Blue */
+body[data-color-theme="blue"] {
+  --accent: #3b82f6;
+  --accent-light: #93c5fd;
+  --accent-glow: rgba(59, 130, 246, 0.15);
+  --shadow: 0 4px 6px rgba(59, 130, 246, 0.08), 0 12px 24px rgba(59, 130, 246, 0.12);
+  --shadow-lg: 0 8px 16px rgba(59, 130, 246, 0.1), 0 20px 40px rgba(59, 130, 246, 0.15);
+  --shadow-xl: 0 12px 24px rgba(59, 130, 246, 0.12), 0 30px 60px rgba(59, 130, 246, 0.2);
+}
+
+body.theme-dark[data-color-theme="blue"] {
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 12px 24px rgba(59, 130, 246, 0.1);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.35), 0 20px 40px rgba(59, 130, 246, 0.12);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.4), 0 30px 60px rgba(59, 130, 246, 0.15);
+}
+
+/* Theme 2: Deep Purple */
+body[data-color-theme="purple"] {
+  --accent: #8b5cf6;
+  --accent-light: #c4b5fd;
+  --accent-glow: rgba(139, 92, 246, 0.15);
+  --shadow: 0 4px 6px rgba(139, 92, 246, 0.08), 0 12px 24px rgba(139, 92, 246, 0.12);
+  --shadow-lg: 0 8px 16px rgba(139, 92, 246, 0.1), 0 20px 40px rgba(139, 92, 246, 0.15);
+  --shadow-xl: 0 12px 24px rgba(139, 92, 246, 0.12), 0 30px 60px rgba(139, 92, 246, 0.2);
+}
+
+body.theme-dark[data-color-theme="purple"] {
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 12px 24px rgba(139, 92, 246, 0.1);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.35), 0 20px 40px rgba(139, 92, 246, 0.12);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.4), 0 30px 60px rgba(139, 92, 246, 0.15);
+}
+
+/* Theme 3: Teal/Cyan */
+body[data-color-theme="teal"] {
+  --accent: #06b6d4;
+  --accent-light: #67e8f9;
+  --accent-glow: rgba(6, 182, 212, 0.15);
+  --shadow: 0 4px 6px rgba(6, 182, 212, 0.08), 0 12px 24px rgba(6, 182, 212, 0.12);
+  --shadow-lg: 0 8px 16px rgba(6, 182, 212, 0.1), 0 20px 40px rgba(6, 182, 212, 0.15);
+  --shadow-xl: 0 12px 24px rgba(6, 182, 212, 0.12), 0 30px 60px rgba(6, 182, 212, 0.2);
+}
+
+body.theme-dark[data-color-theme="teal"] {
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 12px 24px rgba(6, 182, 212, 0.1);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.35), 0 20px 40px rgba(6, 182, 212, 0.12);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.4), 0 30px 60px rgba(6, 182, 212, 0.15);
+}
+
+/* Theme 4: Emerald Green */
+body[data-color-theme="green"] {
+  --accent: #10b981;
+  --accent-light: #6ee7b7;
+  --accent-glow: rgba(16, 185, 129, 0.15);
+  --shadow: 0 4px 6px rgba(16, 185, 129, 0.08), 0 12px 24px rgba(16, 185, 129, 0.12);
+  --shadow-lg: 0 8px 16px rgba(16, 185, 129, 0.1), 0 20px 40px rgba(16, 185, 129, 0.15);
+  --shadow-xl: 0 12px 24px rgba(16, 185, 129, 0.12), 0 30px 60px rgba(16, 185, 129, 0.2);
+}
+
+body.theme-dark[data-color-theme="green"] {
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 12px 24px rgba(16, 185, 129, 0.1);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.35), 0 20px 40px rgba(16, 185, 129, 0.12);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.4), 0 30px 60px rgba(16, 185, 129, 0.15);
+}
+
+/* Theme 5: Magenta/Pink */
+body[data-color-theme="pink"] {
+  --accent: #ec4899;
+  --accent-light: #f9a8d4;
+  --accent-glow: rgba(236, 72, 153, 0.15);
+  --shadow: 0 4px 6px rgba(236, 72, 153, 0.08), 0 12px 24px rgba(236, 72, 153, 0.12);
+  --shadow-lg: 0 8px 16px rgba(236, 72, 153, 0.1), 0 20px 40px rgba(236, 72, 153, 0.15);
+  --shadow-xl: 0 12px 24px rgba(236, 72, 153, 0.12), 0 30px 60px rgba(236, 72, 153, 0.2);
+}
+
+body.theme-dark[data-color-theme="pink"] {
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 12px 24px rgba(236, 72, 153, 0.1);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.35), 0 20px 40px rgba(236, 72, 153, 0.12);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.4), 0 30px 60px rgba(236, 72, 153, 0.15);
+}
+
+/* Default to original peach theme if no theme selected */
+body:not([data-color-theme]) {
+  --accent: #ff7b54;
+  --accent-light: #ffb896;
+  --accent-glow: rgba(255, 123, 84, 0.15);
+}
+
 /* PLAYFUL TYPOGRAPHY - Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 

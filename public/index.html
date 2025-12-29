@@ -8,7 +8,7 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/icons/reseller-ops-icon.svg" sizes="any" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icons/reseller-ops-icon.svg" />
-    <link rel="stylesheet" href="/styles.css?v=8" />
+    <link rel="stylesheet" href="/styles.css?v=9" />
   </head>
   <body class="theme-light">
     <div class="app-shell">
@@ -333,8 +333,15 @@
                   </select>
                 </label>
                 <label class="row">
-                  <span>Accent color</span>
-                  <input type="color" id="accent-color" value="#5b5dff" />
+                  <span>Color theme</span>
+                  <select id="color-theme-select">
+                    <option value="peach">Warm Peach (Default)</option>
+                    <option value="blue">Modern Blue</option>
+                    <option value="purple">Deep Purple</option>
+                    <option value="teal">Teal/Cyan</option>
+                    <option value="green">Emerald Green</option>
+                    <option value="pink">Magenta/Pink</option>
+                  </select>
                 </label>
                 <label class="row">
                   <span>Optional gradients</span>
@@ -822,6 +829,6 @@
       </form>
     </template>
 
-    <script src="/app.js?v=8" type="module"></script>
+    <script src="/app.js?v=9" type="module"></script>
   </body>
 </html>

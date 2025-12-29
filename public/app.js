@@ -1022,6 +1022,9 @@ async function loadSettings() {
     const response = await api.getSettings();
     appState.settings = response.settings || {};
 
+    // Store settings in localStorage for applyThemeClasses
+    localStorage.setItem('settings', JSON.stringify(appState.settings));
+
     // Update theme selector
     const theme = appState.settings.theme || 'light';
     const themeSelect = document.getElementById('theme-select');
@@ -1029,13 +1032,15 @@ async function loadSettings() {
       themeSelect.value = theme;
     }
 
-    // Update accent color
-    const accentColor = appState.settings.accent_color || '#5b5dff';
-    const accentPicker = document.getElementById('accent-color');
-    if (accentPicker) {
-      accentPicker.value = accentColor;
-      document.documentElement.style.setProperty('--accent', accentColor);
+    // Update color theme selector
+    const colorTheme = appState.settings.color_theme || 'peach';
+    const colorThemeSelect = document.getElementById('color-theme-select');
+    if (colorThemeSelect) {
+      colorThemeSelect.value = colorTheme;
     }
+
+    // Apply theme classes
+    applyThemeClasses();
   } catch (error) {
     showToast('Error loading settings');
   }
@@ -1044,20 +1049,47 @@ async function loadSettings() {
 async function updateTheme(value) {
   try {
     await api.updateSetting('theme', value);
-    document.body.className = `theme-${value}`;
+    // Update localStorage
+    const settings = JSON.parse(localStorage.getItem('settings') || '{}');
+    settings.theme = value;
+    localStorage.setItem('settings', JSON.stringify(settings));
+    applyThemeClasses();
     showToast('Theme updated');
   } catch (error) {
     showToast('Error updating theme');
   }
 }
 
-async function updateAccentColor(value) {
+async function updateColorTheme(value) {
   try {
-    await api.updateSetting('accent_color', value);
-    document.documentElement.style.setProperty('--accent', value);
-    showToast('Accent color updated');
+    await api.updateSetting('color_theme', value);
+    // Update localStorage
+    const settings = JSON.parse(localStorage.getItem('settings') || '{}');
+    settings.color_theme = value;
+    localStorage.setItem('settings', JSON.stringify(settings));
+    applyThemeClasses();
+    showToast('Color theme updated');
   } catch (error) {
-    showToast('Error updating accent color');
+    showToast('Error updating color theme');
+  }
+}
+
+/**
+ * Apply theme and color theme classes to body
+ */
+function applyThemeClasses() {
+  const settings = JSON.parse(localStorage.getItem('settings') || '{}');
+  const theme = settings.theme || 'light';
+  const colorTheme = settings.color_theme || 'peach';
+
+  // Set theme class (light/dark)
+  document.body.className = `theme-${theme}`;
+
+  // Set color theme data attribute (blue/purple/teal/green/pink)
+  if (colorTheme !== 'peach') {
+    document.body.setAttribute('data-color-theme', colorTheme);
+  } else {
+    document.body.removeAttribute('data-color-theme');
   }
 }
 
@@ -2390,10 +2422,13 @@ document.addEventListener('DOMContentLoaded', () => {
     themeSelect.addEventListener('change', (e) => updateTheme(e.target.value));
   }
 
-  const accentPicker = document.getElementById('accent-color');
-  if (accentPicker) {
-    accentPicker.addEventListener('input', (e) => updateAccentColor(e.target.value));
+  const colorThemeSelect = document.getElementById('color-theme-select');
+  if (colorThemeSelect) {
+    colorThemeSelect.addEventListener('change', (e) => updateColorTheme(e.target.value));
   }
+
+  // Apply theme classes on load
+  applyThemeClasses();
 
   // eBay OAuth integration
   const ebayConnectBtn = document.getElementById('ebay-connect-btn');
