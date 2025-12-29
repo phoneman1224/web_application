@@ -958,14 +958,21 @@ kbd {
    RESPONSIVE
    ============================================================================ */
 
-@media (max-width: 900px) {
+/* ============================================
+   RESPONSIVE DESIGN - TABLETS (1024px and below)
+   ============================================ */
+@media (max-width: 1024px) {
+  /* Collapse sidebar to horizontal layout */
   .app-shell {
     grid-template-columns: 1fr;
   }
 
   .sidebar {
+    grid-column: 1 / -1;
+    display: flex;
     flex-direction: row;
     overflow-x: auto;
+    height: auto;
     position: sticky;
     top: 80px;
   }
@@ -974,42 +981,188 @@ kbd {
     flex-direction: row;
   }
 
-  .content {
-    padding: 16px;
+  /* Reduce grid minimums to prevent horizontal scroll */
+  .panel-grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   }
 
+  .inline-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+
+  .drilldown {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+
+  .report-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+
+  .settings-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+
+  /* Fix batch actions bar minimum width */
+  .batch-actions-bar {
+    min-width: 100%;
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN - LARGE PHONES (768px and below)
+   ============================================ */
+@media (max-width: 768px) {
+  /* Add table horizontal scroll */
+  .table {
+    overflow-x: auto;
+    display: block;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table .row {
+    display: grid;
+    grid-template-columns: repeat(var(--columns, 5), minmax(120px, 1fr));
+    min-width: max-content;
+  }
+
+  /* Reduce padding */
+  .content {
+    padding: 16px 16px 32px;
+  }
+
+  .topbar {
+    padding: 12px 16px;
+  }
+
+  /* Stack form two-column layouts */
+  .form-row.two-col {
+    grid-template-columns: 1fr;
+  }
+
+  /* Stack split inputs to 2 columns */
+  .split-inputs {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Reduce all grid minimums further */
+  .panel-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  }
+
+  .inline-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  }
+
+  .drilldown {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  }
+
+  .skeleton-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  }
+
+  /* Batch actions bar responsive */
+  .batch-actions-bar {
+    min-width: 100%;
+    flex-wrap: wrap;
+    left: 0;
+    transform: none;
+    padding: 12px 16px;
+  }
+
+  .batch-actions-bar .actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN - STANDARD PHONES (600px and below)
+   ============================================ */
+@media (max-width: 600px) {
+  /* Table columns smaller on phones */
+  .table .row {
+    grid-template-columns: repeat(var(--columns, 5), minmax(100px, 1fr));
+  }
+
+  /* Increase touch target sizes */
+  .btn {
+    padding: 14px 20px;
+    min-height: 44px;
+  }
+
+  .btn.small {
+    padding: 12px 16px;
+    min-height: 44px;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Condense topbar */
   .topbar {
     flex-direction: column;
     gap: 12px;
     align-items: flex-start;
   }
 
-  .row {
-    grid-template-columns: 1fr;
+  .topbar-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
   }
 
+  .topbar-actions .btn {
+    font-size: 0.875rem;
+  }
+
+  /* Full-width search field */
+  .search-field {
+    width: 100%;
+    order: 3;
+  }
+
+  /* Modal with padding */
   .modal {
-    max-width: 100%;
-    max-height: 100vh;
-    border-radius: 0;
+    max-width: calc(100% - 32px);
+    margin: 16px;
+    max-height: calc(100vh - 32px);
   }
 
-  .form-row.two-col {
-    grid-template-columns: 1fr;
-  }
-
+  /* Stack all split inputs */
   .split-inputs {
     grid-template-columns: 1fr;
   }
 
+  /* Stack all grid layouts to single column */
+  .panel-grid,
+  .inline-grid,
+  .drilldown,
+  .report-grid,
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Photo preview grid smaller */
+  .photo-preview-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+
+  /* Dropdown menus responsive */
+  .dropdown-menu {
+    min-width: auto;
+    width: max-content;
+    max-width: calc(100vw - 32px);
+  }
+
+  /* Batch actions bar fully responsive */
   .batch-actions-bar {
-    min-width: 100%;
-    left: 0;
-    transform: none;
     border-radius: 0;
     flex-direction: column;
     gap: 12px;
-    padding: 12px 16px;
   }
 
   .batch-buttons {
@@ -1018,5 +1171,52 @@ kbd {
 
   .batch-buttons button {
     flex: 1;
+  }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN - SMALL PHONES (480px and below)
+   ============================================ */
+@media (max-width: 480px) {
+  /* Minimize all padding */
+  .content {
+    padding: 12px 8px 24px;
+  }
+
+  .topbar {
+    padding: 8px 12px;
+  }
+
+  .panel {
+    padding: 12px;
+  }
+
+  /* Full-screen modal */
+  .modal {
+    max-width: 100%;
+    max-height: 100vh;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  /* Reduce font sizes for content density */
+  .screen-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .kpi .value {
+    font-size: 1.4rem;
+  }
+
+  /* Smaller gaps in grids */
+  .panel-grid,
+  .inline-grid,
+  .drilldown {
+    gap: 8px;
+  }
+
+  /* Smaller table columns on very small screens */
+  .table .row {
+    grid-template-columns: repeat(var(--columns, 5), minmax(80px, 1fr));
   }
 }
