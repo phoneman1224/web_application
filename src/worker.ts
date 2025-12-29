@@ -32,6 +32,12 @@ import {
   validateConfidence,
   ValidationError
 } from './lib/validation';
+import {
+  exchangeCodeForTokens,
+  saveEbayTokens,
+  isEbayConnected,
+  disconnectEbay
+} from './lib/ebay';
 
 export interface Env {
   ASSETS: Fetcher;
@@ -39,6 +45,9 @@ export interface Env {
   RECEIPTS: R2Bucket;
   AI: any; // Cloudflare Workers AI binding
   APP_NAME: string;
+  EBAY_APP_ID: string;
+  EBAY_CERT_ID: string;
+  EBAY_RU_NAME: string;
 }
 
 const AUTH_HEADER = "cf-access-jwt-assertion";
@@ -1913,6 +1922,91 @@ router.get('/api/ai/usage', async (request, params, env: Env) => {
   const summary = await getUsageSummary(env.DB);
 
   return ok(summary);
+});
+
+// ============================================================================
+// EBAY OAUTH INTEGRATION
+// ============================================================================
+
+/**
+ * GET /api/ebay/auth
+ * Redirect to eBay OAuth authorization page
+ */
+router.get('/api/ebay/auth', async (request, params, env: Env) => {
+  // eBay OAuth scopes for selling and inventory management
+  const scopes = [
+    'https://api.ebay.com/oauth/api_scope',
+    'https://api.ebay.com/oauth/api_scope/sell.inventory',
+    'https://api.ebay.com/oauth/api_scope/sell.account',
+  ];
+
+  // Build OAuth URL
+  const authUrl = new URL('https://auth.ebay.com/oauth2/authorize');
+  authUrl.searchParams.set('client_id', env.EBAY_APP_ID);
+  authUrl.searchParams.set('redirect_uri', env.EBAY_RU_NAME);
+  authUrl.searchParams.set('response_type', 'code');
+  authUrl.searchParams.set('scope', scopes.join(' '));
+
+  // Redirect user to eBay
+  return Response.redirect(authUrl.toString(), 302);
+});
+
+/**
+ * GET /api/ebay/callback
+ * Handle OAuth callback from eBay
+ */
+router.get('/api/ebay/callback', async (request, params, env: Env) => {
+  const url = new URL(request.url);
+  const code = url.searchParams.get('code');
+  const error = url.searchParams.get('error');
+
+  // Check for errors
+  if (error) {
+    console.error('eBay OAuth error:', error);
+    return Response.redirect('/?screen=settings&status=ebay_error', 302);
+  }
+
+  if (!code) {
+    return badRequest('Missing authorization code');
+  }
+
+  try {
+    // Exchange code for tokens
+    const tokens = await exchangeCodeForTokens(env, code);
+
+    // Save tokens to database
+    const scopes = [
+      'https://api.ebay.com/oauth/api_scope',
+      'https://api.ebay.com/oauth/api_scope/sell.inventory',
+      'https://api.ebay.com/oauth/api_scope/sell.account',
+    ];
+    await saveEbayTokens(env.DB, tokens, scopes);
+
+    // Redirect back to settings with success status
+    return Response.redirect('/?screen=settings&status=ebay_connected', 302);
+
+  } catch (err) {
+    console.error('Failed to exchange eBay code for tokens:', err);
+    return Response.redirect('/?screen=settings&status=ebay_error', 302);
+  }
+});
+
+/**
+ * GET /api/ebay/status
+ * Check if eBay is connected
+ */
+router.get('/api/ebay/status', async (request, params, env: Env) => {
+  const connected = await isEbayConnected(env.DB);
+  return ok({ connected });
+});
+
+/**
+ * DELETE /api/ebay/disconnect
+ * Disconnect eBay integration
+ */
+router.delete('/api/ebay/disconnect', async (request, params, env: Env) => {
+  await disconnectEbay(env.DB);
+  return ok({ message: 'eBay disconnected successfully' });
 });
 
 // ============================================================================

@@ -2150,6 +2150,56 @@ async function handleAddPricingDraft() {
 }
 
 // ============================================================================
+// EBAY OAUTH INTEGRATION
+// ============================================================================
+
+/**
+ * Check eBay connection status
+ */
+async function checkEbayStatus() {
+  try {
+    const response = await api.request('GET', '/api/ebay/status');
+    if (response.ok) {
+      const data = await response.json();
+      updateEbayStatus(data.connected);
+    }
+  } catch (error) {
+    console.error('Failed to check eBay status:', error);
+  }
+}
+
+/**
+ * Update eBay UI based on connection status
+ * @param {boolean} connected - Whether eBay is connected
+ */
+function updateEbayStatus(connected) {
+  const ebayBtn = document.getElementById('ebay-connect-btn');
+  const ebayStatusText = document.getElementById('ebay-status-text');
+
+  if (ebayBtn) {
+    if (connected) {
+      ebayBtn.textContent = 'Disconnect';
+      ebayBtn.classList.remove('secondary');
+      ebayBtn.classList.add('danger');
+    } else {
+      ebayBtn.textContent = 'Connect';
+      ebayBtn.classList.remove('danger');
+      ebayBtn.classList.add('secondary');
+    }
+  }
+
+  if (ebayStatusText) {
+    if (connected) {
+      ebayStatusText.textContent = '✓ Connected to eBay';
+      ebayStatusText.style.color = 'var(--success, #22c55e)';
+    } else {
+      ebayStatusText.textContent = 'Not connected';
+      ebayStatusText.style.color = 'var(--text-secondary)';
+    }
+  }
+}
+
+// ============================================================================
 // INITIALIZATION
 // ============================================================================
 
@@ -2343,6 +2393,48 @@ document.addEventListener('DOMContentLoaded', () => {
   const accentPicker = document.getElementById('accent-color');
   if (accentPicker) {
     accentPicker.addEventListener('input', (e) => updateAccentColor(e.target.value));
+  }
+
+  // eBay OAuth integration
+  const ebayConnectBtn = document.getElementById('ebay-connect-btn');
+  if (ebayConnectBtn) {
+    // Check eBay connection status on load
+    checkEbayStatus();
+
+    ebayConnectBtn.addEventListener('click', async () => {
+      const isConnected = ebayConnectBtn.textContent.trim() === 'Disconnect';
+
+      if (isConnected) {
+        // Disconnect eBay
+        if (confirm('Are you sure you want to disconnect eBay?')) {
+          try {
+            await api.request('DELETE', '/api/ebay/disconnect');
+            showToast('eBay disconnected successfully');
+            updateEbayStatus(false);
+          } catch (error) {
+            showToast('Failed to disconnect eBay');
+            console.error('eBay disconnect error:', error);
+          }
+        }
+      } else {
+        // Redirect to eBay OAuth
+        window.location.href = '/api/ebay/auth';
+      }
+    });
+  }
+
+  // Check for eBay OAuth callback status
+  const urlParams = new URLSearchParams(window.location.search);
+  const ebayStatus = urlParams.get('status');
+  if (ebayStatus === 'ebay_connected') {
+    showToast('eBay connected successfully!');
+    updateEbayStatus(true);
+    // Remove status param from URL
+    window.history.replaceState({}, '', window.location.pathname + window.location.hash);
+  } else if (ebayStatus === 'ebay_error') {
+    showToast('Failed to connect eBay. Please try again.');
+    // Remove status param from URL
+    window.history.replaceState({}, '', window.location.pathname + window.location.hash);
   }
 
   // Load initial screen
