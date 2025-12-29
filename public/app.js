@@ -3,6 +3,46 @@
 // ============================================================================
 
 // ============================================================================
+// HAMBURGER MENU TOGGLE
+// ============================================================================
+
+const menuToggle = document.getElementById('menu-toggle');
+const menuOverlay = document.getElementById('menu-overlay');
+const sidebar = document.querySelector('.sidebar');
+
+function toggleMenu() {
+  menuToggle.classList.toggle('active');
+  menuOverlay.classList.toggle('active');
+  sidebar.classList.toggle('active');
+
+  // Prevent body scroll when menu is open
+  if (sidebar.classList.contains('active')) {
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = '';
+  }
+}
+
+// Toggle menu on button click
+if (menuToggle) {
+  menuToggle.addEventListener('click', toggleMenu);
+}
+
+// Close menu when overlay clicked
+if (menuOverlay) {
+  menuOverlay.addEventListener('click', toggleMenu);
+}
+
+// Close menu when navigation link clicked
+document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+  link.addEventListener('click', () => {
+    if (sidebar.classList.contains('active')) {
+      toggleMenu();
+    }
+  });
+});
+
+// ============================================================================
 // STATE MANAGEMENT
 // ============================================================================
 
