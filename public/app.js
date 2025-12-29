@@ -1204,7 +1204,7 @@ function setupFormHandlers(templateId, container) {
 function setupItemFormHandlers(container) {
   // SKU validation (real-time)
   const skuInput = container.querySelector('[name="sku"]');
-  const skuHint = container.getElementById('sku-hint');
+  const skuHint = container.querySelector('#sku-hint');
 
   if (skuInput) {
     skuInput.addEventListener('blur', async () => {
@@ -1230,7 +1230,7 @@ function setupItemFormHandlers(container) {
   }
 
   // AI: Enhance description
-  const enhanceBtn = container.getElementById('enhance-description-btn');
+  const enhanceBtn = container.querySelector('#enhance-description-btn');
   const descInput = container.querySelector('[name="description"]');
 
   if (enhanceBtn && descInput) {
@@ -1258,13 +1258,13 @@ function setupItemFormHandlers(container) {
   }
 
   // AI: Analyze photo
-  const photoUpload = container.getElementById('photo-upload');
-  const analyzeBtn = container.getElementById('analyze-photo-btn');
-  const photoPreview = container.getElementById('photo-preview');
-  const categorySelect = container.getElementById('item-category');
-  const aiCategorySuggestion = container.getElementById('ai-category-suggestion');
-  const aiCategoryValue = container.getElementById('ai-category-value');
-  const applyCategoryBtn = container.getElementById('apply-ai-category');
+  const photoUpload = container.querySelector('#photo-upload');
+  const analyzeBtn = container.querySelector('#analyze-photo-btn');
+  const photoPreview = container.querySelector('#photo-preview');
+  const categorySelect = container.querySelector('#item-category');
+  const aiCategorySuggestion = container.querySelector('#ai-category-suggestion');
+  const aiCategoryValue = container.querySelector('#ai-category-value');
+  const applyCategoryBtn = container.querySelector('#apply-ai-category');
 
   if (photoUpload) {
     photoUpload.addEventListener('change', () => {
@@ -1324,8 +1324,8 @@ function setupItemFormHandlers(container) {
 
 // Sale Form Handlers
 function setupSaleFormHandlers(container) {
-  const itemsPicker = container.getElementById('sale-items-picker');
-  const addItemBtn = container.getElementById('add-sale-item');
+  const itemsPicker = container.querySelector('#sale-items-picker');
+  const addItemBtn = container.querySelector('#add-sale-item');
 
   // Item picker
   let selectedItems = currentModalData?.items || [];
@@ -1404,8 +1404,8 @@ function setupSaleFormHandlers(container) {
     const taxRate = 0.22; // Default 22% federal tax
     const tax = Math.max(0, profit * taxRate);
 
-    container.getElementById('calc-profit').textContent = formatCurrency(profit);
-    container.getElementById('calc-tax').textContent = formatCurrency(tax);
+    container.querySelector('#calc-profit').textContent = formatCurrency(profit);
+    container.querySelector('#calc-tax').textContent = formatCurrency(tax);
   }
 
   [grossInput, feesInput, promoInput, shippingInput].forEach(input => {
@@ -1433,13 +1433,13 @@ function setupSaleFormHandlers(container) {
 
 // Expense Form Handlers
 function setupExpenseFormHandlers(container) {
-  const categorySelect = container.getElementById('expense-category');
-  const vehicleSection = container.getElementById('vehicle-deduction-section');
+  const categorySelect = container.querySelector('#expense-category');
+  const vehicleSection = container.querySelector('#vehicle-deduction-section');
   const splitInventory = container.querySelector('[name="split_inventory"]');
   const splitOperations = container.querySelector('[name="split_operations"]');
   const splitOther = container.querySelector('[name="split_other"]');
-  const splitTotal = container.getElementById('split-total');
-  const suggestSplitBtn = container.getElementById('suggest-split-btn');
+  const splitTotal = container.querySelector('#split-total');
+  const suggestSplitBtn = container.querySelector('#suggest-split-btn');
 
   // Show/hide vehicle deduction
   if (categorySelect && vehicleSection) {
@@ -1534,7 +1534,7 @@ function setupExpenseFormHandlers(container) {
 
 // Lot Form Handlers
 function setupLotFormHandlers(container) {
-  const itemsPicker = container.getElementById('lot-items-picker');
+  const itemsPicker = container.querySelector('#lot-items-picker');
   let selectedItems = currentModalData?.items || [];
 
   function renderItemPicker() {
@@ -1572,7 +1572,7 @@ function setupLotFormHandlers(container) {
       }
     });
 
-    const costEl = container.getElementById('lot-total-cost');
+    const costEl = container.querySelector('#lot-total-cost');
     if (costEl) {
       costEl.textContent = formatCurrency(totalCost);
     }
@@ -1598,10 +1598,10 @@ function setupLotFormHandlers(container) {
 // Pricing Draft Form Handlers
 function setupPricingFormHandlers(container) {
   const priceTypeRadios = container.querySelectorAll('[name="price_type"]');
-  const itemSelectRow = container.getElementById('item-select-row');
-  const lotSelectRow = container.getElementById('lot-select-row');
-  const itemSelect = container.getElementById('pricing-item-select');
-  const lotSelect = container.getElementById('pricing-lot-select');
+  const itemSelectRow = container.querySelector('#item-select-row');
+  const lotSelectRow = container.querySelector('#lot-select-row');
+  const itemSelect = container.querySelector('#pricing-item-select');
+  const lotSelect = container.querySelector('#pricing-lot-select');
 
   // Populate selects
   if (itemSelect) {
@@ -1630,9 +1630,9 @@ function setupPricingFormHandlers(container) {
   });
 
   // AI: Suggest price
-  const suggestPriceBtn = container.getElementById('suggest-price-btn');
-  const aiPriceSuggestion = container.getElementById('ai-price-suggestion');
-  const applyPriceBtn = container.getElementById('apply-ai-price');
+  const suggestPriceBtn = container.querySelector('#suggest-price-btn');
+  const aiPriceSuggestion = container.querySelector('#ai-price-suggestion');
+  const applyPriceBtn = container.querySelector('#apply-ai-price');
   const priceInput = container.querySelector('[name="suggested_price"]');
 
   if (suggestPriceBtn) {
@@ -1651,10 +1651,10 @@ function setupPricingFormHandlers(container) {
       try {
         const result = await api.suggestPrice(itemId, lotId);
 
-        container.getElementById('ai-price-min').textContent = result.min.toFixed(2);
-        container.getElementById('ai-price-max').textContent = result.max.toFixed(2);
-        container.getElementById('ai-price-suggested').textContent = result.suggested.toFixed(2);
-        container.getElementById('ai-price-reasoning').textContent = result.reasoning;
+        container.querySelector('#ai-price-min').textContent = result.min.toFixed(2);
+        container.querySelector('#ai-price-max').textContent = result.max.toFixed(2);
+        container.querySelector('#ai-price-suggested').textContent = result.suggested.toFixed(2);
+        container.querySelector('#ai-price-reasoning').textContent = result.reasoning;
 
         aiPriceSuggestion.style.display = 'block';
 
@@ -1674,12 +1674,12 @@ function setupPricingFormHandlers(container) {
   }
 
   // AI: Generate SEO
-  const generateSeoBtn = container.getElementById('generate-seo-btn');
-  const aiSeoResult = container.getElementById('ai-seo-result');
-  const applySeoBtn = container.getElementById('apply-ai-seo');
+  const generateSeoBtn = container.querySelector('#generate-seo-btn');
+  const aiSeoResult = container.querySelector('#ai-seo-result');
+  const applySeoBtn = container.querySelector('#apply-ai-seo');
   const titleInput = container.querySelector('[name="seo_title"]');
   const descInput = container.querySelector('[name="seo_description"]');
-  const titleCharCount = container.getElementById('title-char-count');
+  const titleCharCount = container.querySelector('#title-char-count');
 
   // Title character count
   if (titleInput && titleCharCount) {
@@ -1704,13 +1704,13 @@ function setupPricingFormHandlers(container) {
       try {
         const result = await api.generateSEO(itemId, lotId);
 
-        container.getElementById('ai-seo-title').textContent = result.title;
-        container.getElementById('ai-seo-description').textContent = result.description;
-        container.getElementById('ai-seo-keywords').textContent = result.keywords.join(', ');
+        container.querySelector('#ai-seo-title').textContent = result.title;
+        container.querySelector('#ai-seo-description').textContent = result.description;
+        container.querySelector('#ai-seo-keywords').textContent = result.keywords.join(', ');
 
         const confidencePct = Math.round(result.confidence * 100);
-        container.getElementById('ai-seo-confidence').style.width = `${confidencePct}%`;
-        container.getElementById('ai-seo-confidence-text').textContent = `${confidencePct}%`;
+        container.querySelector('#ai-seo-confidence').style.width = `${confidencePct}%`;
+        container.querySelector('#ai-seo-confidence-text').textContent = `${confidencePct}%`;
 
         aiSeoResult.style.display = 'block';
 
