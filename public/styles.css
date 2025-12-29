@@ -962,23 +962,53 @@ kbd {
    RESPONSIVE DESIGN - TABLETS (1024px and below)
    ============================================ */
 @media (max-width: 1024px) {
-  /* Collapse sidebar to horizontal layout */
+  /* Collapse sidebar to card layout */
   .app-shell {
     grid-template-columns: 1fr;
   }
 
   .sidebar {
     grid-column: 1 / -1;
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
     height: auto;
-    position: sticky;
-    top: 80px;
+    position: static;
+    padding: 16px;
+    background: var(--bg);
   }
 
   .sidebar nav {
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+
+  .sidebar .nav-link {
+    padding: 16px 12px;
+    border-radius: 12px;
+    border: 2px solid var(--muted);
+    background: var(--panel-bg);
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.95rem;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidebar .nav-link.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  .sidebar .nav-link:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+    color: white;
+  }
+
+  .sidebar-footer {
+    display: none;
   }
 
   /* Reduce grid minimums to prevent horizontal scroll */
@@ -1080,6 +1110,18 @@ kbd {
    RESPONSIVE DESIGN - STANDARD PHONES (600px and below)
    ============================================ */
 @media (max-width: 600px) {
+  /* Make navigation cards larger and easier to tap on phones */
+  .sidebar nav {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 10px;
+  }
+
+  .sidebar .nav-link {
+    padding: 20px 12px;
+    min-height: 70px;
+    font-size: 0.9rem;
+  }
+
   /* Table columns smaller on phones */
   .table .row {
     grid-template-columns: repeat(var(--columns, 5), minmax(100px, 1fr));
