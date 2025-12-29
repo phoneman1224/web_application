@@ -88,6 +88,18 @@ jobs:
         run: |
           echo "🔄 Applying migrations to PRODUCTION database..."
           npx wrangler d1 execute reseller_app --remote --file=migrations/0002_comprehensive_schema.sql --config wrangler.generated.toml
+          echo "🔄 Applying eBay integration migration..."
+          npx wrangler d1 execute reseller_app --remote --file=migrations/0003_ebay_integration.sql --config wrangler.generated.toml || echo "Migration already applied or table exists"
+
+      - name: Set eBay OAuth secrets
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          echo "🔐 Setting eBay OAuth secrets..."
+          echo "${{ secrets.EBAY_APP_ID }}" | npx wrangler secret put EBAY_APP_ID --config wrangler.generated.toml
+          echo "${{ secrets.EBAY_CERT_ID }}" | npx wrangler secret put EBAY_CERT_ID --config wrangler.generated.toml
+          echo "https://app.markbrian5178.org/api/ebay/callback" | npx wrangler secret put EBAY_RU_NAME --config wrangler.generated.toml
 
       - name: Deploy to PRODUCTION
         env:
