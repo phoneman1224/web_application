@@ -818,9 +818,66 @@ label.row {
 }
 
 .tooltip {
+  position: relative;
   cursor: help;
   color: var(--accent);
   font-size: 0.9em;
+  display: inline-block;
+  margin-left: 4px;
+}
+
+/* Tooltip box */
+.tooltip::before {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--panel);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  pointer-events: none;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  line-height: 1.4;
+}
+
+/* Tooltip arrow */
+.tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--text);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* Show tooltip on hover */
+.tooltip:hover::before,
+.tooltip:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Long tooltip text wrapping */
+.tooltip[data-tip*="must sum to 100"]::before,
+.tooltip[data-tip*="Choose mileage"]::before {
+  white-space: normal;
+  max-width: 200px;
+  text-align: center;
 }
 
 /* ============================================================================
