@@ -106,7 +106,7 @@ database_id = "${testDbId}"` : '# D1 database not configured - run provision scr
 
 # Test R2 Bucket
 [[env.test.r2_buckets]]
-binding = "PHOTOS"
+binding = "RECEIPTS"
 bucket_name = "${BUCKET_TEST}"
 
 [env.test.vars]
@@ -127,7 +127,7 @@ database_id = "${prodDbId}"` : '# D1 database not configured - run provision scr
 
 # Production R2 Bucket
 [[env.production.r2_buckets]]
-binding = "PHOTOS"
+binding = "RECEIPTS"
 bucket_name = "${BUCKET_PROD}"
 
 [env.production.vars]
