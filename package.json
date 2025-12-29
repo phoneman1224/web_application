@@ -10,13 +10,9 @@
     "test:all": "npm run test && npm run test:cf",
     "lint": "npm run test",
     "generate-config": "node scripts/generate-wrangler-config.mjs",
-    "provision:test": "node scripts/provision-cf.mjs --env test",
-    "provision:prod": "node scripts/provision-cf.mjs --env production",
-    "migrate:test": "wrangler d1 execute reseller_app_test --remote --file=migrations/0002_comprehensive_schema.sql --config wrangler.generated.toml",
+    "provision": "node scripts/provision-cf.mjs",
     "migrate:prod": "wrangler d1 execute reseller_app --remote --file=migrations/0002_comprehensive_schema.sql --config wrangler.generated.toml",
-    "deploy:test": "npm run generate-config && wrangler deploy --env test --config wrangler.generated.toml",
-    "deploy:prod": "npm run generate-config && wrangler deploy --env production --config wrangler.generated.toml",
-    "deploy:all": "npm run deploy:test && npm run deploy:prod"
+    "deploy:prod": "npm run generate-config && wrangler deploy --env production --config wrangler.generated.toml"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240229.0",

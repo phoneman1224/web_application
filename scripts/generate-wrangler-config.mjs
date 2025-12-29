@@ -3,16 +3,14 @@
 /**
  * Generate wrangler.generated.toml from environment variables
  *
- * This script creates a complete wrangler configuration for TEST and PROD environments
+ * This script creates a complete wrangler configuration for PRODUCTION environment
  * based on environment variables and discovered Cloudflare resources.
  *
  * Required environment variables:
  * - CLOUDFLARE_ACCOUNT_ID: Your Cloudflare account ID
  *
  * Optional environment variables:
- * - DATABASE_ID_TEST: D1 database ID for test environment (auto-detected if not set)
  * - DATABASE_ID_PROD: D1 database ID for prod environment (auto-detected if not set)
- * - BUCKET_NAME_TEST: R2 bucket name for test (default: reseller-app-test)
  * - BUCKET_NAME_PROD: R2 bucket name for prod (default: reseller-app)
  */
 
@@ -21,9 +19,7 @@ import { writeFileSync } from 'fs';
 
 // Get environment variables
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
-const DB_ID_TEST = process.env.DATABASE_ID_TEST;
 const DB_ID_PROD = process.env.DATABASE_ID_PROD;
-const BUCKET_TEST = process.env.BUCKET_NAME_TEST || 'reseller-app-test';
 const BUCKET_PROD = process.env.BUCKET_NAME_PROD || 'reseller-app';
 
 if (!ACCOUNT_ID) {
@@ -57,14 +53,11 @@ function discoverD1Database(name) {
 }
 
 /**
- * Get database IDs (from env vars or auto-discovery)
+ * Get database ID (from env var or auto-discovery)
  */
-const testDbId = DB_ID_TEST || discoverD1Database('reseller_app_test');
 const prodDbId = DB_ID_PROD || discoverD1Database('reseller_app');
 
-console.log(`   Test DB: ${testDbId || 'NOT SET'}`);
 console.log(`   Prod DB: ${prodDbId || 'NOT SET'}`);
-console.log(`   Test R2 Bucket: ${BUCKET_TEST}`);
 console.log(`   Prod R2 Bucket: ${BUCKET_PROD}`);
 
 /**
@@ -91,27 +84,6 @@ binding = "AI"
 # Global variables
 [vars]
 APP_NAME = "Reseller Ops"
-
-# ============================================
-# TEST ENVIRONMENT
-# ============================================
-[env.test]
-name = "reseller-app-test"
-route = { pattern = "test.markbrian5178.org/*", zone_name = "markbrian5178.org" }
-
-# Test D1 Database
-${testDbId ? `[[env.test.d1_databases]]
-binding = "DB"
-database_name = "reseller_app_test"
-database_id = "${testDbId}"` : '# D1 database not configured - run provision script'}
-
-# Test R2 Bucket
-[[env.test.r2_buckets]]
-binding = "RECEIPTS"
-bucket_name = "${BUCKET_TEST}"
-
-[env.test.vars]
-ENVIRONMENT = "test"
 
 # ============================================
 # PRODUCTION ENVIRONMENT
@@ -141,16 +113,14 @@ try {
   console.log('✅ Generated wrangler.generated.toml');
 
   // Warnings
-  if (!testDbId || !prodDbId) {
-    console.log('\n⚠️  Warning: Some database IDs are missing.');
-    console.log('   Run the provision script to create D1 databases:');
-    console.log('   node scripts/provision-cf.mjs --env test');
-    console.log('   node scripts/provision-cf.mjs --env production');
+  if (!prodDbId) {
+    console.log('\n⚠️  Warning: Production database ID is missing.');
+    console.log('   Run the provision script to create D1 database:');
+    console.log('   node scripts/provision-cf.mjs');
   }
 
   console.log('\n✅ Configuration generated successfully!');
   console.log('   You can now deploy with:');
-  console.log('   npm run deploy:test');
   console.log('   npm run deploy:prod');
 } catch (error) {
   console.error('❌ Error writing configuration file:', error.message);

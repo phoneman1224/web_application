@@ -1,11 +1,10 @@
 import { execSync } from 'child_process';
 
-const env = process.argv.includes('--env') ? process.argv[process.argv.indexOf('--env') + 1] : 'test';
-const dbName = env === 'test' ? 'reseller_app_test' : 'reseller_app';
-const bucketName = env === 'test' ? 'reseller-app-test' : 'reseller-app';
+const dbName = 'reseller_app';
+const bucketName = 'reseller-app';
 
 async function run() {
-    console.log(` Provisioning Cloudflare resources for env: ${env}`);
+    console.log(' Provisioning Cloudflare production resources...');
 
     // Provision D1 Database
     try {

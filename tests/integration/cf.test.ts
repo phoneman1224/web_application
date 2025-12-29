@@ -3,9 +3,9 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
-const bucketName = process.env.CF_R2_BUCKET_TEST || "reseller-app-test";
-const dbName = process.env.CF_D1_DB_TEST || "reseller_app_test";
-const workerName = process.env.CF_WORKER_TEST || "reseller-app-test";
+const bucketName = process.env.CF_R2_BUCKET || "reseller-app";
+const dbName = process.env.CF_D1_DB || "reseller_app";
+const workerName = process.env.CF_WORKER || "reseller-app";
 
 async function runWrangler(args: string[]) {
   const { stdout } = await execFileAsync("npx", ["wrangler", ...args], {
