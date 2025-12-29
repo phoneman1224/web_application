@@ -80,8 +80,9 @@ compatibility_date = "2024-04-01"
 account_id = "${ACCOUNT_ID}"
 
 # Static assets
-[site]
-bucket = "./public"
+[assets]
+directory = "./public"
+binding = "ASSETS"
 
 # AI binding (Cloudflare Workers AI)
 [ai]
