@@ -99,7 +99,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           echo "🔄 Applying migrations to TEST database..."
-          wrangler d1 execute reseller_app_test --remote --file=migrations/0002_comprehensive_schema.sql --config wrangler.generated.toml || true
+          npx wrangler d1 execute reseller_app_test --remote --file=migrations/0002_comprehensive_schema.sql --config wrangler.generated.toml || true
 
       - name: Run Cloudflare integration tests
         if: steps.check-credentials.outputs.has_credentials == 'true'
@@ -152,7 +152,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           echo "🔄 Applying migrations to TEST database..."
-          wrangler d1 execute reseller_app_test --remote --file=migrations/0002_comprehensive_schema.sql --config wrangler.generated.toml
+          npx wrangler d1 execute reseller_app_test --remote --file=migrations/0002_comprehensive_schema.sql --config wrangler.generated.toml
 
       - name: Deploy to TEST
         env:
@@ -211,7 +211,7 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           echo "🔄 Applying migrations to PRODUCTION database..."
-          wrangler d1 execute reseller_app --remote --file=migrations/0002_comprehensive_schema.sql --config wrangler.generated.toml
+          npx wrangler d1 execute reseller_app --remote --file=migrations/0002_comprehensive_schema.sql --config wrangler.generated.toml
 
       - name: Deploy to PRODUCTION
         env:
