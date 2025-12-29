@@ -673,9 +673,9 @@ input[type="color"] {
   align-items: center;
 }
 
-.radio-group label {
-  display: flex;
-  flex-direction: row;
+.form .radio-group label {
+  display: flex !important;
+  flex-direction: row !important;
   align-items: center;
   gap: 8px;
   cursor: pointer;
