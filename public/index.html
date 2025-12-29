@@ -9,8 +9,50 @@
     <link rel="icon" href="/icons/reseller-ops-icon.svg" sizes="any" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icons/reseller-ops-icon.svg" />
     <link rel="stylesheet" href="/styles.css?v=3" />
+    <style>
+      /* Diagnostic test for responsive design */
+      #responsive-test {
+        position: fixed;
+        top: 0;
+        right: 0;
+        padding: 8px 16px;
+        background: red;
+        color: white;
+        font-weight: bold;
+        z-index: 99999;
+        font-size: 12px;
+      }
+      #responsive-test::before {
+        content: "DESKTOP";
+      }
+      @media (max-width: 1024px) {
+        #responsive-test {
+          background: orange;
+        }
+        #responsive-test::before {
+          content: "TABLET";
+        }
+      }
+      @media (max-width: 768px) {
+        #responsive-test {
+          background: blue;
+        }
+        #responsive-test::before {
+          content: "LARGE PHONE";
+        }
+      }
+      @media (max-width: 600px) {
+        #responsive-test {
+          background: green;
+        }
+        #responsive-test::before {
+          content: "PHONE";
+        }
+      }
+    </style>
   </head>
   <body class="theme-light">
+    <div id="responsive-test"></div>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand">
