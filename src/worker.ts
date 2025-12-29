@@ -1960,10 +1960,15 @@ router.get('/api/ebay/callback', async (request, params, env: Env) => {
   const code = url.searchParams.get('code');
   const error = url.searchParams.get('error');
 
+  // Build absolute redirect URLs
+  const origin = url.origin; // e.g., https://app.markbrian5178.org
+  const errorUrl = `${origin}/?screen=settings&status=ebay_error`;
+  const successUrl = `${origin}/?screen=settings&status=ebay_connected`;
+
   // Check for errors
   if (error) {
     console.error('eBay OAuth error:', error);
-    return Response.redirect('/?screen=settings&status=ebay_error', 302);
+    return Response.redirect(errorUrl, 302);
   }
 
   if (!code) {
@@ -1983,11 +1988,11 @@ router.get('/api/ebay/callback', async (request, params, env: Env) => {
     await saveEbayTokens(env.DB, tokens, scopes);
 
     // Redirect back to settings with success status
-    return Response.redirect('/?screen=settings&status=ebay_connected', 302);
+    return Response.redirect(successUrl, 302);
 
   } catch (err) {
     console.error('Failed to exchange eBay code for tokens:', err);
-    return Response.redirect('/?screen=settings&status=ebay_error', 302);
+    return Response.redirect(errorUrl, 302);
   }
 });
 
