@@ -2396,6 +2396,94 @@ router.delete('/api/ebay/disconnect', async (request, params, env: Env) => {
   return ok({ message: 'eBay disconnected successfully' });
 });
 
+/**
+ * GET /api/ebay/debug-status
+ * Get detailed eBay connection status including token expiry
+ */
+router.get('/api/ebay/debug-status', async (request, params, env: Env) => {
+  try {
+    const integration = await env.DB.prepare(
+      'SELECT * FROM integrations WHERE provider = ?'
+    ).bind('ebay').first();
+
+    if (!integration) {
+      return ok({
+        connected: false,
+        hasTokens: false,
+        tokenValid: false,
+        error: 'No eBay integration found'
+      });
+    }
+
+    const now = new Date();
+    const expiry = new Date(integration.token_expiry as string);
+    const tokenValid = expiry > now;
+    const minutesUntilExpiry = (expiry.getTime() - now.getTime()) / 1000 / 60;
+
+    return ok({
+      connected: true,
+      hasTokens: true,
+      tokenValid: tokenValid,
+      tokenExpiry: integration.token_expiry,
+      timeUntilExpiry: Math.round(minutesUntilExpiry * 10) / 10, // Round to 1 decimal
+      scopes: JSON.parse((integration.scopes as string) || '[]'),
+      warning: tokenValid ? null : 'Token expired - reconnection required'
+    });
+  } catch (error: any) {
+    console.error('[eBay] Debug status error:', error);
+    return internalError(error.message);
+  }
+});
+
+/**
+ * POST /api/ebay/test-connection
+ * Test eBay API connection with a simple API call
+ */
+router.post('/api/ebay/test-connection', async (request, params, env: Env) => {
+  try {
+    const { getEbayTokens, fetchFromEbay } = await import('./lib/ebay');
+
+    const tokens = await getEbayTokens(env.DB);
+
+    if (!tokens) {
+      return badRequest('Not connected to eBay', {
+        errorCode: 'NOT_CONNECTED',
+        action: 'Please reconnect in Settings'
+      });
+    }
+
+    // Make a simple test API call to verify connection
+    try {
+      await fetchFromEbay(
+        env,
+        env.DB,
+        'https://api.ebay.com/sell/account/v1/privilege',
+        'GET'
+      );
+
+      return ok({
+        success: true,
+        message: 'eBay connection is working',
+        apiCallSucceeded: true
+      });
+    } catch (apiError: any) {
+      console.error('[eBay] Test connection API call failed:', apiError);
+      return badRequest('Connection test failed', {
+        errorCode: 'CONNECTION_TEST_FAILED',
+        error: apiError.message,
+        suggestion: 'Try reconnecting to eBay in Settings'
+      });
+    }
+
+  } catch (error: any) {
+    console.error('[eBay] Test connection failed:', error);
+    return badRequest('Connection test failed', {
+      errorCode: 'UNKNOWN_ERROR',
+      error: error.message
+    });
+  }
+});
+
 // ============================================================================
 // BACKUP & RESTORE ENDPOINTS
 // ============================================================================

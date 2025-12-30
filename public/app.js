@@ -2324,6 +2324,20 @@ async function handleChatGPTImport() {
  * Import active eBay listings to local inventory
  */
 async function handleImportEbayListings() {
+  // Pre-flight connection check
+  try {
+    const statusResponse = await fetch('/api/ebay/status');
+    if (statusResponse.ok) {
+      const status = await statusResponse.json();
+      if (!status.connected) {
+        showToast('⚠️ eBay not connected. Please connect to eBay in Settings first.');
+        return;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to check eBay status:', error);
+  }
+
   const confirmed = confirm('Import active eBay listings? This will fetch all inventory items from your eBay account.');
 
   if (!confirmed) {
@@ -2338,8 +2352,25 @@ async function handleImportEbayListings() {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Import failed');
+      let errorMessage = 'Import failed';
+
+      try {
+        const error = await response.json();
+        errorMessage = error.error || error.message || errorMessage;
+
+        // Log full error to console for debugging
+        console.error('eBay import error:', error);
+      } catch (parseError) {
+        // Response wasn't JSON - try text
+        try {
+          const text = await response.text();
+          errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+        } catch (e) {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+      }
+
+      throw new Error(errorMessage);
     }
 
     const result = await response.json();
@@ -2367,6 +2398,20 @@ async function handleImportEbayListings() {
  * Import eBay sales for a date range
  */
 async function handleImportEbaySales() {
+  // Pre-flight connection check
+  try {
+    const statusResponse = await fetch('/api/ebay/status');
+    if (statusResponse.ok) {
+      const status = await statusResponse.json();
+      if (!status.connected) {
+        showToast('⚠️ eBay not connected. Please connect to eBay in Settings first.');
+        return;
+      }
+    }
+  } catch (error) {
+    console.error('Failed to check eBay status:', error);
+  }
+
   // Create simple modal for date range selection
   const modalContent = `
     <div class="panel">
@@ -2424,8 +2469,25 @@ async function handleImportEbaySales() {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Import failed');
+        let errorMessage = 'Import failed';
+
+        try {
+          const error = await response.json();
+          errorMessage = error.error || error.message || errorMessage;
+
+          // Log full error to console for debugging
+          console.error('eBay import error:', error);
+        } catch (parseError) {
+          // Response wasn't JSON - try text
+          try {
+            const text = await response.text();
+            errorMessage = text || `HTTP ${response.status}: ${response.statusText}`;
+          } catch (e) {
+            errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+          }
+        }
+
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
