@@ -93,7 +93,19 @@ export class Router {
       try {
         return await route.handler(request, params, env, ctx);
       } catch (error: any) {
-        console.error('Route handler error:', error);
+        // Log error with structured format
+        const errorLog = {
+          level: 'error',
+          message: 'Route handler error',
+          timestamp: new Date().toISOString(),
+          meta: {
+            path: url.pathname,
+            method: request.method,
+            error: error.message,
+            stack: error.stack
+          }
+        };
+        console.error(JSON.stringify(errorLog));
         return this.errorResponse(error);
       }
     }
@@ -194,8 +206,33 @@ export function jsonResponse(
 /**
  * Helper: Create success response (200)
  */
-export function ok(data: any): Response {
-  return jsonResponse(data, 200);
+export function ok(data: any, cacheControl?: string): Response {
+  const headers = cacheControl ? { 'Cache-Control': cacheControl } : undefined;
+  return jsonResponse(data, 200, headers);
+}
+
+/**
+ * Helper: Create success response with short-term cache (5 minutes)
+ * Use for data that changes infrequently (reports, aggregations)
+ */
+export function okCached(data: any): Response {
+  return ok(data, 'private, max-age=300'); // 5 minutes
+}
+
+/**
+ * Helper: Create success response with medium-term cache (1 hour)
+ * Use for relatively static data (settings, fee profiles)
+ */
+export function okCachedLong(data: any): Response {
+  return ok(data, 'private, max-age=3600'); // 1 hour
+}
+
+/**
+ * Helper: Create success response with no-cache directive
+ * Use for frequently changing data (items, sales, expenses)
+ */
+export function okNoCache(data: any): Response {
+  return ok(data, 'private, no-cache, must-revalidate');
 }
 
 /**

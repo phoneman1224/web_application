@@ -2920,8 +2920,8 @@ function renderValuationResults(valuation, isPhotoValuation) {
     sampleListingsEl.innerHTML = valuation.marketData.listings
       .map(listing => `
         <div style="padding: 8px; border-bottom: 1px solid var(--border); font-size: 14px;">
-          <p><strong>${listing.title}</strong></p>
-          <p class="muted">Price: $${listing.price.toFixed(2)} | Condition: ${listing.condition}</p>
+          <p><strong>${escapeHtml(listing.title)}</strong></p>
+          <p class="muted">Price: $${listing.price.toFixed(2)} | Condition: ${escapeHtml(listing.condition)}</p>
         </div>
       `)
       .join('');

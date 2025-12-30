@@ -2,6 +2,9 @@ import {
   Router,
   parseJsonBody,
   ok,
+  okCached,
+  okCachedLong,
+  okNoCache,
   created,
   noContent,
   badRequest,
@@ -328,18 +331,35 @@ router.get('/api/sales', async (request, params, env: Env) => {
   const result = await env.DB.prepare(sqlQuery).bind(...sqlParams).all();
   const sales = result.results || [];
 
-  // For each sale, fetch associated items
-  for (const sale of sales) {
-    const saleItems = await env.DB
+  // Performance: Fetch all sale items in a single query to avoid N+1
+  if (sales.length > 0) {
+    const saleIds = sales.map((s: any) => s.id);
+    const placeholders = saleIds.map(() => '?').join(',');
+
+    const allSaleItems = await env.DB
       .prepare(`
         SELECT si.*, i.name as item_name, i.cost as item_cost
         FROM sale_items si
         JOIN items i ON si.item_id = i.id
-        WHERE si.sale_id = ?
+        WHERE si.sale_id IN (${placeholders})
       `)
-      .bind((sale as any).id)
+      .bind(...saleIds)
       .all();
-    (sale as any).items = saleItems.results || [];
+
+    // Group sale items by sale_id
+    const itemsBySale: Record<string, any[]> = {};
+    for (const item of allSaleItems.results || []) {
+      const saleId = (item as any).sale_id;
+      if (!itemsBySale[saleId]) {
+        itemsBySale[saleId] = [];
+      }
+      itemsBySale[saleId].push(item);
+    }
+
+    // Attach items to each sale
+    for (const sale of sales) {
+      (sale as any).items = itemsBySale[(sale as any).id] || [];
+    }
   }
 
   return ok({ sales });
@@ -852,26 +872,42 @@ router.delete('/api/expenses/:id', async (request, params, env: Env) => {
 router.get('/api/lots', async (request, params, env: Env) => {
   const lots = await getAll<any>(env.DB, 'lots');
 
-  // For each lot, fetch items and calculate rolled-up cost
-  for (const lot of lots) {
-    const lotItems = await env.DB
+  // Performance: Fetch all lot items in a single query to avoid N+1
+  if (lots.length > 0) {
+    const lotIds = lots.map(l => l.id);
+    const placeholders = lotIds.map(() => '?').join(',');
+
+    const allLotItems = await env.DB
       .prepare(`
         SELECT li.*, i.name as item_name, i.cost as item_cost, i.category as item_category
         FROM lot_items li
         JOIN items i ON li.item_id = i.id
-        WHERE li.lot_id = ?
+        WHERE li.lot_id IN (${placeholders})
       `)
-      .bind(lot.id)
+      .bind(...lotIds)
       .all();
 
-    lot.items = lotItems.results || [];
-
-    // Calculate rolled-up cost
-    let totalCost = 0;
-    for (const item of lot.items) {
-      totalCost += (item as any).item_cost * (item as any).quantity;
+    // Group lot items by lot_id
+    const itemsByLot: Record<string, any[]> = {};
+    for (const item of allLotItems.results || []) {
+      const lotId = (item as any).lot_id;
+      if (!itemsByLot[lotId]) {
+        itemsByLot[lotId] = [];
+      }
+      itemsByLot[lotId].push(item);
     }
-    lot.total_cost = Math.round(totalCost * 100) / 100;
+
+    // Attach items to each lot and calculate rolled-up cost
+    for (const lot of lots) {
+      lot.items = itemsByLot[lot.id] || [];
+
+      // Calculate rolled-up cost
+      let totalCost = 0;
+      for (const item of lot.items) {
+        totalCost += (item as any).item_cost * (item as any).quantity;
+      }
+      lot.total_cost = Math.round(totalCost * 100) / 100;
+    }
   }
 
   return ok({ lots });
@@ -1244,7 +1280,7 @@ router.post('/api/pricing-drafts/:id/apply', async (request, params, env: Env) =
  */
 router.get('/api/settings', async (request, params, env: Env) => {
   const settings = await getAllSettings(env.DB);
-  return ok({ settings });
+  return okCachedLong({ settings }); // Cache for 1 hour - settings rarely change
 });
 
 /**
@@ -1258,7 +1294,7 @@ router.get('/api/settings/:key', async (request, params, env: Env) => {
     return notFoundResponse('Setting not found');
   }
 
-  return ok({ key: params.key, value });
+  return okCachedLong({ key: params.key, value }); // Cache for 1 hour
 });
 
 /**
@@ -1349,7 +1385,7 @@ router.get('/api/reports/dashboard', async (request, params, env: Env) => {
     nextActions.push(`${readyDrafts} items ready to list`);
   }
 
-  return ok({
+  return okCached({ // Cache for 5 minutes - reduces expensive aggregation queries
     mtd_profit: Math.round(mtdProfit * 100) / 100,
     sales_tax_liability: Math.round(salesTaxLiability * 100) / 100,
     ready_drafts: readyDrafts,
@@ -1394,7 +1430,7 @@ router.get('/api/reports/profit-loss', async (request, params, env: Env) => {
     .bind(startDate, endDate)
     .first();
 
-  return ok({
+  return okCached({ // Cache for 5 minutes - report data changes infrequently
     revenue: {
       gross: (revenueResult as any)?.gross || 0,
       fees: (revenueResult as any)?.fees || 0,
@@ -1443,7 +1479,7 @@ router.get('/api/reports/tax-summary', async (request, params, env: Env) => {
 
   const floridaTaxLiability = (floridaResult as any)?.total || 0;
 
-  return ok({
+  return okCached({ // Cache for 5 minutes - tax calculations
     federal_tax_estimate: Math.round(federalTaxEstimate * 100) / 100,
     florida_sales_tax_liability: Math.round(floridaTaxLiability * 100) / 100
   });
@@ -1471,7 +1507,7 @@ router.get('/api/reports/florida-sales-tax', async (request, params, env: Env) =
     .bind(startDate, endDate)
     .all();
 
-  return ok({ breakdown: result.results || [] });
+  return okCached({ breakdown: result.results || [] }); // Cache for 5 minutes
 });
 
 // ============================================================================
@@ -1590,6 +1626,40 @@ router.get('/api/exports/tax-year', async (request, params, env: Env) => {
 // ============================================================================
 
 /**
+ * Validate image file based on magic bytes (file signature)
+ * Security: Prevents uploading of malicious files disguised as images
+ */
+function validateImageFile(bytes: Uint8Array, filename: string): { valid: boolean; type?: string; error?: string } {
+  // Check file size (must have at least 12 bytes for magic byte detection)
+  if (bytes.length < 12) {
+    return { valid: false, error: 'File too small to be a valid image' };
+  }
+
+  // JPEG: FF D8 FF
+  if (bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
+    return { valid: true, type: 'image/jpeg' };
+  }
+
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+    return { valid: true, type: 'image/png' };
+  }
+
+  // GIF: 47 49 46 38 (GIF8)
+  if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) {
+    return { valid: true, type: 'image/gif' };
+  }
+
+  // WebP: RIFF ???? WEBP
+  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+      bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
+    return { valid: true, type: 'image/webp' };
+  }
+
+  return { valid: false, error: `Invalid image format. Only JPEG, PNG, GIF, and WebP are supported.` };
+}
+
+/**
  * POST /api/photos/upload
  * Upload a photo to R2 storage
  */
@@ -1601,21 +1671,40 @@ router.post('/api/photos/upload', async (request, params, env: Env) => {
     return badRequest('No file provided');
   }
 
-  // Validate file type
-  if (!file.type.startsWith('image/')) {
-    return badRequest('File must be an image');
+  // Security: Validate file size (5MB limit)
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  if (file.size > MAX_FILE_SIZE) {
+    return badRequest('File size exceeds 5MB limit');
   }
 
-  // Generate unique key
+  // Security: Whitelist of allowed file extensions
+  const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+  const extension = file.name.split('.').pop()?.toLowerCase() || '';
+  if (!allowedExtensions.includes(extension)) {
+    return badRequest(`Invalid file extension. Allowed: ${allowedExtensions.join(', ')}`);
+  }
+
+  // Security: Read file buffer and validate magic bytes
+  const arrayBuffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+  const validation = validateImageFile(bytes, file.name);
+
+  if (!validation.valid) {
+    return badRequest(validation.error || 'Invalid image file');
+  }
+
+  // Use the detected content type from magic bytes (more secure than trusting client)
+  const contentType = validation.type || 'image/jpeg';
+
+  // Generate unique key with validated extension
   const timestamp = Date.now();
   const randomPart = Math.random().toString(36).substring(2, 15);
-  const extension = file.name.split('.').pop() || 'jpg';
   const key = `photos/${timestamp}-${randomPart}.${extension}`;
 
   // Upload to R2
-  await env.RECEIPTS.put(key, file.stream(), {
+  await env.RECEIPTS.put(key, arrayBuffer, {
     httpMetadata: {
-      contentType: file.type
+      contentType: contentType
     }
   });
 
@@ -2923,7 +3012,8 @@ export default {
     const url = new URL(request.url);
 
     // Allow eBay OAuth endpoints without authentication (needed for OAuth callback)
-    const publicPaths = ['/api/ebay/auth', '/api/ebay/callback', '/api/ebay/status', '/api/health', '/api/debug/env'];
+    // Note: /api/debug/env removed from public paths for security - requires authentication
+    const publicPaths = ['/api/ebay/auth', '/api/ebay/callback', '/api/ebay/status', '/api/health'];
     const isPublicPath = publicPaths.some(path => url.pathname === path);
 
     // Fail closed: reject unauthenticated requests (except public paths)
