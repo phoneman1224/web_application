@@ -61,6 +61,72 @@ export async function getEbayTokens(db: D1Database): Promise<EbayTokens | null> 
 }
 
 /**
+ * Get valid eBay tokens with automatic refresh if expired
+ *
+ * This function attempts to auto-refresh expired tokens before returning null.
+ * Use this instead of getEbayTokens() for API calls that need guaranteed valid tokens.
+ *
+ * @param env Environment with eBay credentials
+ * @param db D1 Database instance
+ * @returns Valid tokens or null if refresh failed/not connected
+ */
+export async function getValidEbayTokens(
+  env: Env,
+  db: D1Database
+): Promise<EbayTokens | null> {
+  const integration = await db
+    .prepare('SELECT access_token, refresh_token, token_expiry, scopes FROM integrations WHERE provider = ?')
+    .bind('ebay')
+    .first<EbayTokens>();
+
+  if (!integration) {
+    console.warn('[eBay] No integration found');
+    return null;
+  }
+
+  const now = new Date();
+  const expiry = new Date(integration.token_expiry || '');
+  const minutesUntilExpiry = (expiry.getTime() - now.getTime()) / 1000 / 60;
+
+  console.log(`[eBay] Token expires in ${minutesUntilExpiry.toFixed(1)} minutes`);
+
+  // Token still valid - return it
+  if (expiry > now) {
+    return integration;
+  }
+
+  // Token expired - attempt auto-refresh
+  console.log('[eBay] Token expired, attempting auto-refresh...');
+
+  if (!integration.refresh_token) {
+    console.error('[eBay] No refresh token available - user must reconnect');
+    return null;
+  }
+
+  try {
+    // Refresh the token
+    const newTokens = await refreshEbayToken(env, integration.refresh_token);
+
+    // Save refreshed tokens
+    const scopes = integration.scopes ? JSON.parse(integration.scopes) : [];
+    await saveEbayTokens(db, newTokens, scopes);
+
+    console.log('[eBay] Token auto-refresh successful');
+
+    // Return the new tokens
+    return {
+      access_token: newTokens.access_token,
+      refresh_token: newTokens.refresh_token || integration.refresh_token,
+      token_expiry: new Date(Date.now() + newTokens.expires_in * 1000).toISOString(),
+      scopes: integration.scopes
+    };
+  } catch (error) {
+    console.error('[eBay] Token refresh failed:', error);
+    return null;
+  }
+}
+
+/**
  * Exchange OAuth authorization code for access/refresh tokens
  *
  * @param env Environment with EBAY_APP_ID, EBAY_CERT_ID, EBAY_RU_NAME

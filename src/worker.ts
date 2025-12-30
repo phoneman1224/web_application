@@ -2175,10 +2175,16 @@ router.post('/api/ebay/create-draft', async (request, params, env: Env) => {
  */
 router.post('/api/ebay/import-listings', async (request, params, env: Env) => {
   try {
-    // Check eBay connection
-    const isConnected = await isEbayConnected(env.DB);
-    if (!isConnected) {
-      return badRequest('eBay not connected. Please authenticate first.');
+    // Check eBay connection with auto-refresh
+    const { getValidEbayTokens } = await import('./lib/ebay');
+    const tokens = await getValidEbayTokens(env, env.DB);
+
+    if (!tokens) {
+      return badRequest('eBay connection expired. Please reconnect to eBay in Settings.', {
+        errorCode: 'EBAY_NOT_CONNECTED',
+        action: 'reconnect',
+        reconnectUrl: '/api/ebay/auth'
+      });
     }
 
     // Fetch listings from eBay
@@ -2233,10 +2239,16 @@ router.post('/api/ebay/import-listings', async (request, params, env: Env) => {
  */
 router.post('/api/ebay/import-sales', async (request, params, env: Env) => {
   try {
-    // Check eBay connection
-    const isConnected = await isEbayConnected(env.DB);
-    if (!isConnected) {
-      return badRequest('eBay not connected. Please authenticate first.');
+    // Check eBay connection with auto-refresh
+    const { getValidEbayTokens } = await import('./lib/ebay');
+    const tokens = await getValidEbayTokens(env, env.DB);
+
+    if (!tokens) {
+      return badRequest('eBay connection expired. Please reconnect to eBay in Settings.', {
+        errorCode: 'EBAY_NOT_CONNECTED',
+        action: 'reconnect',
+        reconnectUrl: '/api/ebay/auth'
+      });
     }
 
     // Parse date range from request body

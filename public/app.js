@@ -2511,6 +2511,33 @@ async function handleImportEbaySales() {
 }
 
 /**
+ * Check eBay connection health and warn user if token is expiring or expired
+ */
+async function checkEbayConnectionHealth() {
+  try {
+    const response = await fetch('/api/ebay/debug-status');
+    if (!response.ok) return;
+
+    const status = await response.json();
+
+    // Show warning if token expires soon (less than 60 minutes)
+    if (status.connected && status.tokenValid && status.timeUntilExpiry < 60 && status.timeUntilExpiry > 0) {
+      const minutes = Math.round(status.timeUntilExpiry);
+      showToast(`⚠️ eBay connection expires in ${minutes} minute${minutes !== 1 ? 's' : ''}. Please reconnect soon in Settings.`, 8000);
+    }
+
+    // Show error if token expired
+    if (status.connected && !status.tokenValid) {
+      showToast('❌ eBay connection expired. Please reconnect in Settings to import data.', 10000);
+    }
+
+  } catch (error) {
+    // Don't show errors to user - this is a background health check
+    console.error('Failed to check eBay connection health:', error);
+  }
+}
+
+/**
  * Get default start date (30 days ago)
  */
 function getDefaultStartDate() {
@@ -3023,6 +3050,9 @@ function clearValuationResults() {
 document.addEventListener('DOMContentLoaded', () => {
   initOfflineBanner();
   updateOfflineBanner();
+
+  // Check eBay connection health on page load
+  checkEbayConnectionHealth();
 
   window.addEventListener('online', () => {
     showToast('Back online. Syncing queued updates.');
