@@ -2103,16 +2103,18 @@ router.post('/api/ebay/import-listings', async (request, params, env: Env) => {
       try {
         await env.DB.prepare(`
           INSERT INTO items (
-            name, description, cost, category, status, bin_location,
+            id, sku, name, description, cost, category, status, bin_location,
             ebay_listing_id, ebay_status, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
         `).bind(
+          generateId('itm'),
+          listing.sku,
           listing.name,
           listing.description,
           listing.cost,
           listing.category,
           listing.status,
-          listing.sku, // Use SKU as bin location for imported items
+          null,
           listing.ebay_listing_id,
           listing.ebay_status
         ).run();

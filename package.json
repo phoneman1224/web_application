@@ -9,6 +9,7 @@
     "test:cf": "node scripts/run-cf-tests.mjs",
     "test:all": "npm run test && npm run test:cf",
     "lint": "npm run test",
+    "check": "tsc --noEmit",
     "generate-config": "node scripts/generate-wrangler-config.mjs",
     "provision": "node scripts/provision-cf.mjs",
     "migrate:prod": "wrangler d1 execute reseller_app --remote --file=migrations/0002_comprehensive_schema.sql --config wrangler.generated.toml",
