@@ -2436,7 +2436,7 @@ async function handleImportEbaySales() {
   `;
 
   const modal = document.getElementById('modal');
-  const modalTitle = modal.querySelector('h3');
+  const modalTitle = document.getElementById('modal-title');
   const modalBody = modal.querySelector('.modal-body');
   const saveBtn = modal.querySelector('#modal-save');
 
@@ -2716,7 +2716,7 @@ async function handleQuickSale() {
   `;
 
   const modal = document.getElementById('modal');
-  const modalTitle = modal.querySelector('h3');
+  const modalTitle = document.getElementById('modal-title');
   const modalBody = modal.querySelector('.modal-body');
   const saveBtn = modal.querySelector('#modal-save');
 
