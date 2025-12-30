@@ -83,6 +83,16 @@ router.get('/api/health', async (request, params, env: Env) => {
   return ok({ ok: true, db: result?.ok === 1 });
 });
 
+router.get('/api/debug/env', async (request, params, env: Env) => {
+  return ok({
+    hasEbayAppId: !!env.EBAY_APP_ID,
+    hasEbayCertId: !!env.EBAY_CERT_ID,
+    hasEbayRuName: !!env.EBAY_RU_NAME,
+    ebayAppIdLength: env.EBAY_APP_ID?.length || 0,
+    ebayRuNameValue: env.EBAY_RU_NAME?.substring(0, 20) + '...' || 'undefined'
+  });
+});
+
 // ============================================================================
 // ITEMS CRUD
 // ============================================================================
@@ -2908,12 +2918,16 @@ router.get('/api/exports/csv', async (request, params, env: Env) => {
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    // Fail closed: reject unauthenticated requests
-    if (!isAuthorized(request)) {
+    const url = new URL(request.url);
+
+    // Allow eBay OAuth endpoints without authentication (needed for OAuth callback)
+    const publicPaths = ['/api/ebay/auth', '/api/ebay/callback', '/api/ebay/status', '/api/health', '/api/debug/env'];
+    const isPublicPath = publicPaths.some(path => url.pathname === path);
+
+    // Fail closed: reject unauthenticated requests (except public paths)
+    if (!isPublicPath && !isAuthorized(request)) {
       return unauthorized();
     }
-
-    const url = new URL(request.url);
 
     // Route API requests through router
     if (url.pathname.startsWith("/api/")) {
