@@ -90,6 +90,10 @@ jobs:
           npx wrangler d1 execute reseller_app --remote --file=migrations/0002_comprehensive_schema.sql --config wrangler.generated.toml
           echo "🔄 Applying eBay integration migration..."
           npx wrangler d1 execute reseller_app --remote --file=migrations/0003_ebay_integration.sql --config wrangler.generated.toml || echo "Migration already applied or table exists"
+          echo "🔄 Applying eBay fields migration..."
+          npx wrangler d1 execute reseller_app --remote --file=migrations/0004_ebay_fields.sql --config wrangler.generated.toml || echo "Migration already applied or table exists"
+          echo "🔄 Applying performance indexes migration..."
+          npx wrangler d1 execute reseller_app --remote --file=migrations/0006_performance_indexes.sql --config wrangler.generated.toml || echo "Migration already applied or table exists"
 
       - name: Set eBay OAuth secrets
         env:

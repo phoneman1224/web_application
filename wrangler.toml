@@ -8,3 +8,8 @@ APP_NAME = "Reseller Ops"
 
 [ai]
 binding = "AI"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "reseller_app"
+database_id = "de771c15-a288-466b-b89a-f8d188d397d2"

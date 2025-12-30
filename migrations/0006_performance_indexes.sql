@@ -18,4 +18,4 @@ CREATE INDEX IF NOT EXISTS idx_sales_platform_date ON sales(platform, sale_date)
 CREATE INDEX IF NOT EXISTS idx_items_ebay_status ON items(ebay_status);
 
 -- Index for AI usage tracking
-CREATE INDEX IF NOT EXISTS idx_ai_usage_timestamp ON ai_usage(timestamp);
+CREATE INDEX IF NOT EXISTS idx_ai_usage_created_at ON ai_usage(created_at);
