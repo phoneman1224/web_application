@@ -2467,8 +2467,8 @@ router.post('/api/ebay/test-connection', async (request, params, env: Env) => {
     // Make a simple test API call to verify connection
     try {
       await fetchFromEbay(
-        env,
         env.DB,
+        env,
         'https://api.ebay.com/sell/account/v1/privilege',
         'GET'
       );
