@@ -1,0 +1,76 @@
+{
+  "name": "ResellerOS",
+  "short_name": "ResellerOS",
+  "description": "eBay-integrated reseller operations platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Quick Add Item",
+      "short_name": "Add Item",
+      "description": "Quickly add a new inventory item",
+      "url": "/#quick-add",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "eBay Valuation",
+      "short_name": "Valuation",
+      "description": "Get eBay market pricing",
+      "url": "/#ebay-valuation",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Record Sale",
+      "short_name": "Sale",
+      "description": "Log a quick sale",
+      "url": "/#quick-sale",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Import from eBay",
+      "short_name": "Import",
+      "description": "Sync eBay listings and sales",
+      "url": "/#import-ebay",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "categories": ["business", "productivity", "finance"],
+  "screenshots": []
+}

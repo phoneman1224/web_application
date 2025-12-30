@@ -470,6 +470,9 @@ async function loadScreen(screenName) {
       case 'pricing':
         await loadPricing();
         break;
+      case 'ebay-valuation':
+        await loadEbayValuation();
+        break;
       case 'reports':
         await loadReports();
         break;
@@ -508,6 +511,9 @@ async function loadDashboard() {
     } catch (error) {
       console.log('AI insights unavailable:', error.message);
     }
+
+    // Load eBay dashboard widgets
+    await loadEbayDashboardWidgets();
   } catch (error) {
     console.error('Dashboard error:', error);
     showToast('Error loading dashboard');
@@ -517,6 +523,93 @@ async function loadDashboard() {
 function updateDashboardInsights(insights) {
   // This would update a dashboard insights panel if it exists
   console.log('AI Insights:', insights);
+}
+
+/**
+ * Load eBay dashboard widgets with activity stats
+ */
+async function loadEbayDashboardWidgets() {
+  try {
+    // Calculate eBay metrics from app state
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // eBay Activity counts
+    const ebayItems = appState.items.filter(i => i.ebay_listing_id);
+    const activeListings = ebayItems.filter(i => i.ebay_status === 'active').length;
+    const draftListings = ebayItems.filter(i => i.ebay_status === 'draft').length;
+
+    const ebaySales = appState.sales?.filter(s => s.platform === 'eBay') || [];
+    const soldThisWeek = ebaySales.filter(s => new Date(s.sale_date) >= weekAgo).length;
+
+    // Update eBay Activity widget
+    document.getElementById('ebay-active-count').textContent = activeListings;
+    document.getElementById('ebay-draft-count').textContent = draftListings;
+    document.getElementById('ebay-sold-week').textContent = soldThisWeek;
+
+    // eBay Performance (MTD)
+    const ebayMTDSales = ebaySales
+      .filter(s => new Date(s.sale_date) >= monthStart)
+      .reduce((sum, s) => sum + (s.gross_amount || 0), 0);
+
+    const ebayMTDProfit = ebaySales
+      .filter(s => new Date(s.sale_date) >= monthStart)
+      .reduce((sum, s) => sum + (s.profit || 0), 0);
+
+    const profitMargin = ebayMTDSales > 0 ? (ebayMTDProfit / ebayMTDSales * 100).toFixed(1) : 0;
+
+    document.getElementById('ebay-mtd-sales').textContent = formatCurrency(ebayMTDSales);
+    document.getElementById('ebay-profit-margin').textContent = `${profitMargin}%`;
+
+    // eBay Action Items
+    const actionItems = [];
+
+    // Items ready to list (have photos, not listed)
+    const readyToList = appState.items.filter(i =>
+      !i.ebay_listing_id &&
+      i.status === 'Unlisted' &&
+      i.photo_count > 0
+    ).length;
+    if (readyToList > 0) {
+      actionItems.push(`<li><a href="#" onclick="loadScreen('inventory'); return false;">${readyToList} items ready to list on eBay</a></li>`);
+    }
+
+    // Stale listings (active for 30+ days)
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const staleListings = ebayItems.filter(i =>
+      i.ebay_status === 'active' &&
+      new Date(i.updated_at) < thirtyDaysAgo
+    ).length;
+    if (staleListings > 0) {
+      actionItems.push(`<li>${staleListings} stale listings (30+ days)</li>`);
+    }
+
+    // Items without pricing
+    const needsValuation = appState.items.filter(i =>
+      !i.ebay_listing_id &&
+      i.status === 'Unlisted' &&
+      (!i.suggested_price || i.suggested_price === 0)
+    ).length;
+    if (needsValuation > 0) {
+      actionItems.push(`<li><a href="#" onclick="loadScreen('ebay-valuation'); return false;">${needsValuation} items need eBay valuation</a></li>`);
+    }
+
+    // Drafts pending review
+    if (draftListings > 0) {
+      actionItems.push(`<li><a href="https://www.ebay.com/sh/lst/drafts" target="_blank">${draftListings} eBay drafts pending publish</a></li>`);
+    }
+
+    const actionItemsList = document.getElementById('ebay-action-items');
+    if (actionItems.length > 0) {
+      actionItemsList.innerHTML = actionItems.join('');
+    } else {
+      actionItemsList.innerHTML = '<li class="muted">No action items - you\'re all caught up! 🎉</li>';
+    }
+  } catch (error) {
+    console.error('Failed to load eBay dashboard widgets:', error);
+    // Silently fail - dashboard still works without eBay widgets
+  }
 }
 
 // ============================================================================
@@ -2181,6 +2274,426 @@ async function handleAddPricingDraft() {
   });
 }
 
+/**
+ * Handle ChatGPT CSV import
+ */
+async function handleChatGPTImport() {
+  openModal('Import from ChatGPT', 'template-chatgpt-import', null, async () => {
+    const fileInput = document.getElementById('chatgpt-csv-file');
+    const file = fileInput?.files[0];
+
+    if (!file) {
+      showToast('Please select a CSV file');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/import/chatgpt-items', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Import failed');
+      }
+
+      const result = await response.json();
+
+      if (result.imported > 0) {
+        showToast(`✓ Imported ${result.imported} items successfully`);
+        await loadInventory();
+        closeModal();
+      }
+
+      if (result.errors > 0) {
+        console.warn('Import errors:', result.errorDetails);
+        showToast(`⚠ ${result.errors} rows had errors (check console)`, 5000);
+      }
+    } catch (error) {
+      console.error('ChatGPT import failed:', error);
+      showToast(`✗ Import failed: ${error.message}`);
+    }
+  });
+}
+
+/**
+ * Import active eBay listings to local inventory
+ */
+async function handleImportEbayListings() {
+  const confirmed = confirm('Import active eBay listings? This will fetch all inventory items from your eBay account.');
+
+  if (!confirmed) {
+    return;
+  }
+
+  showToast('Importing listings from eBay...', 10000);
+
+  try {
+    const response = await fetch('/api/ebay/import-listings', {
+      method: 'POST'
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Import failed');
+    }
+
+    const result = await response.json();
+
+    if (result.imported > 0) {
+      showToast(`✓ Imported ${result.imported} listings (${result.duplicates} already existed)`);
+      await loadInventory();
+    } else if (result.duplicates > 0) {
+      showToast(`All ${result.duplicates} listings already imported`);
+    } else {
+      showToast('No new listings found');
+    }
+
+    if (result.errors > 0) {
+      console.warn('Import errors:', result.errorDetails);
+      showToast(`⚠ ${result.errors} items had errors (check console)`, 5000);
+    }
+  } catch (error) {
+    console.error('eBay listing import failed:', error);
+    showToast(`✗ Import failed: ${error.message}`);
+  }
+}
+
+/**
+ * Import eBay sales for a date range
+ */
+async function handleImportEbaySales() {
+  // Create simple modal for date range selection
+  const modalContent = `
+    <div class="panel">
+      <h4>Import eBay Sales</h4>
+      <p class="muted">Import orders from eBay and auto-match to your items</p>
+
+      <div class="form-row">
+        <label>Start Date</label>
+        <input type="date" id="import-sales-start" value="${getDefaultStartDate()}" />
+      </div>
+
+      <div class="form-row">
+        <label>End Date</label>
+        <input type="date" id="import-sales-end" value="${getDefaultEndDate()}" />
+      </div>
+
+      <details>
+        <summary>How it works</summary>
+        <p>Sales are automatically matched to items via eBay listing ID. Unmatched sales will still be imported for manual review.</p>
+      </details>
+    </div>
+  `;
+
+  const modal = document.getElementById('modal');
+  const modalTitle = modal.querySelector('h3');
+  const modalBody = modal.querySelector('.modal-body');
+  const saveBtn = modal.querySelector('#modal-save');
+
+  modalTitle.textContent = 'Import eBay Sales';
+  modalBody.innerHTML = modalContent;
+  modal.style.display = 'flex';
+
+  saveBtn.onclick = async () => {
+    const startDate = document.getElementById('import-sales-start')?.value;
+    const endDate = document.getElementById('import-sales-end')?.value;
+
+    if (!startDate || !endDate) {
+      showToast('Please select both start and end dates');
+      return;
+    }
+
+    closeModal();
+    showToast('Importing sales from eBay...', 10000);
+
+    try {
+      const response = await fetch('/api/ebay/import-sales', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dateRange: {
+            start: new Date(startDate).toISOString(),
+            end: new Date(endDate).toISOString()
+          }
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Import failed');
+      }
+
+      const result = await response.json();
+
+      if (result.imported > 0) {
+        showToast(`✓ Imported ${result.imported} sales (${result.matched} matched, ${result.orphaned} unmatched)`);
+        await loadSales();
+      } else {
+        showToast('No sales found in date range');
+      }
+
+      if (result.errors > 0) {
+        console.warn('Import errors:', result.errorDetails);
+        showToast(`⚠ ${result.errors} orders had errors (check console)`, 5000);
+      }
+    } catch (error) {
+      console.error('eBay sales import failed:', error);
+      showToast(`✗ Import failed: ${error.message}`);
+    }
+  };
+}
+
+/**
+ * Get default start date (30 days ago)
+ */
+function getDefaultStartDate() {
+  const date = new Date();
+  date.setDate(date.getDate() - 30);
+  return date.toISOString().split('T')[0];
+}
+
+/**
+ * Get default end date (today)
+ */
+function getDefaultEndDate() {
+  return new Date().toISOString().split('T')[0];
+}
+
+/**
+ * Handle creating eBay draft listing from an item
+ */
+async function handleCreateEbayDraft(itemId) {
+  const item = appState.items.find(i => i.id === itemId);
+  if (!item) {
+    showToast('Item not found');
+    return;
+  }
+
+  // Pre-fill form data with item information
+  const formData = {
+    itemId: item.id,
+    sku: item.sku || `SKU-${Date.now()}`, // Generate SKU if missing
+    title: item.name || '',
+    price: item.suggested_price || item.cost * 2 || 0, // 2x markup default
+    quantity: 1,
+    condition: 'USED_GOOD', // Default condition
+    description: item.description || item.name || ''
+  };
+
+  openModal('Create eBay Draft Listing', 'template-ebay-draft', formData, async (data) => {
+    // Validate
+    if (!data.title || !data.price || !data.condition || !data.quantity) {
+      showToast('Please fill all required fields');
+      return;
+    }
+
+    const button = document.querySelector('#modal-save');
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Creating draft...';
+    }
+
+    try {
+      const response = await fetch('/api/ebay/create-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          itemId: data.itemId,
+          sku: data.sku,
+          title: data.title,
+          price: parseFloat(data.price),
+          quantity: parseInt(data.quantity),
+          condition: data.condition,
+          description: data.description
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create draft');
+      }
+
+      const result = await response.json();
+
+      closeModal();
+      showToast('✓ eBay draft created! Opening eBay drafts page...');
+
+      // Reload inventory to show updated status
+      await loadInventory();
+
+      // Open eBay drafts page in new tab
+      if (result.draftUrl) {
+        window.open(result.draftUrl, '_blank');
+      }
+    } catch (error) {
+      console.error('eBay draft creation failed:', error);
+      showToast(`✗ ${error.message}`);
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.textContent = 'Save';
+      }
+    }
+  });
+
+  // Set up character counter for title
+  const titleInput = document.getElementById('ebay-title');
+  const charCount = document.getElementById('ebay-title-char-count');
+  if (titleInput && charCount) {
+    const updateCount = () => {
+      charCount.textContent = titleInput.value.length;
+    };
+    titleInput.addEventListener('input', updateCount);
+    updateCount(); // Initial count
+  }
+}
+
+// ============================================================================
+// QUICK ACTIONS (FAB SHORTCUTS)
+// ============================================================================
+
+/**
+ * Quick Add Item - Minimal prompts for fast item entry
+ */
+async function handleQuickAddItem() {
+  const name = prompt('Item name:');
+  if (!name) return;
+
+  const cost = prompt('Cost (optional):');
+
+  try {
+    await api.request('POST', '/api/items', {
+      name,
+      cost: cost ? parseFloat(cost) : 0,
+      category: 'Unsorted',
+      status: 'Unlisted',
+      lifecycle_stage: 'Captured'
+    });
+
+    showToast(`✓ Added "${name}"`);
+    if (appState.currentScreen === 'inventory') {
+      await loadInventory();
+    }
+  } catch (error) {
+    showToast(`✗ Failed to add item: ${error.message}`);
+  }
+}
+
+/**
+ * Quick Sale - Show recent items for quick sale entry
+ */
+async function handleQuickSale() {
+  // Get last 10 unlisted/listed items
+  const recentItems = appState.items
+    .filter(i => ['Unlisted', 'Listed', 'Draft'].includes(i.status))
+    .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+    .slice(0, 10);
+
+  if (recentItems.length === 0) {
+    showToast('No items available for quick sale');
+    return;
+  }
+
+  // Create simple selection modal
+  const modalContent = `
+    <div class="panel">
+      <h4>Quick Sale</h4>
+      <p class="muted">Select item and enter sale price</p>
+
+      <div class="form-row">
+        <label>Item</label>
+        <select id="quick-sale-item" required>
+          ${recentItems.map(item =>
+            `<option value="${item.id}">${item.name} (${item.category || 'No category'})</option>`
+          ).join('')}
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label>Sale Price</label>
+        <input type="number" id="quick-sale-price" step="0.01" required />
+      </div>
+
+      <div class="form-row">
+        <label>Platform (optional)</label>
+        <input type="text" id="quick-sale-platform" placeholder="e.g., eBay, Mercari" />
+      </div>
+    </div>
+  `;
+
+  const modal = document.getElementById('modal');
+  const modalTitle = modal.querySelector('h3');
+  const modalBody = modal.querySelector('.modal-body');
+  const saveBtn = modal.querySelector('#modal-save');
+
+  modalTitle.textContent = 'Quick Sale';
+  modalBody.innerHTML = modalContent;
+  modal.style.display = 'flex';
+
+  saveBtn.onclick = async () => {
+    const itemId = parseInt(document.getElementById('quick-sale-item')?.value);
+    const price = parseFloat(document.getElementById('quick-sale-price')?.value);
+    const platform = document.getElementById('quick-sale-platform')?.value || 'Direct';
+
+    if (!itemId || !price) {
+      showToast('Please fill in all required fields');
+      return;
+    }
+
+    const item = appState.items.find(i => i.id === itemId);
+    if (!item) {
+      showToast('Item not found');
+      return;
+    }
+
+    try {
+      // Create sale
+      const saleData = {
+        order_number: `QUICK-${Date.now()}`,
+        sale_date: new Date().toISOString(),
+        platform,
+        gross_amount: price,
+        platform_fees: 0,
+        shipping_cost: 0,
+        net_amount: price,
+        profit: item.cost ? price - item.cost : 0
+      };
+
+      const saleResult = await api.request('POST', '/api/sales', saleData);
+      const saleId = saleResult.id;
+
+      // Link to item
+      await api.request('POST', '/api/sales/link-item', {
+        saleId,
+        itemId
+      });
+
+      // Update item status
+      await api.request('PUT', `/api/items/${itemId}`, {
+        ...item,
+        status: 'Sold',
+        lifecycle_stage: 'Sold'
+      });
+
+      closeModal();
+      showToast(`✓ Sold "${item.name}" for $${price.toFixed(2)}`);
+
+      if (appState.currentScreen === 'sales') {
+        await loadSales();
+      } else if (appState.currentScreen === 'inventory') {
+        await loadInventory();
+      }
+    } catch (error) {
+      showToast(`✗ Failed to record sale: ${error.message}`);
+    }
+  };
+}
+
 // ============================================================================
 // EBAY OAUTH INTEGRATION
 // ============================================================================
@@ -2228,6 +2741,216 @@ function updateEbayStatus(connected) {
       ebayStatusText.textContent = 'Not connected';
       ebayStatusText.style.color = 'var(--text-secondary)';
     }
+  }
+}
+
+// ============================================================================
+// EBAY VALUATION FUNCTIONS
+// ============================================================================
+
+/**
+ * Load eBay Valuation screen
+ */
+async function loadEbayValuation() {
+  // Check AI quota for photo valuations
+  try {
+    const usageResponse = await fetch('/api/ai/usage');
+    if (usageResponse.ok) {
+      const usage = await usageResponse.json();
+      const dailyUsage = usage.today || 0;
+      const quotaRemaining = 10000 - dailyUsage;
+      // Each photo valuation uses 800 neurons
+      const photoValuationsRemaining = Math.floor(quotaRemaining / 800);
+      const remainingEl = document.getElementById('photo-valuations-remaining');
+      if (remainingEl) {
+        remainingEl.textContent = Math.max(0, photoValuationsRemaining);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to check AI quota:', error);
+  }
+}
+
+/**
+ * Handle text-based valuation
+ */
+async function handleTextValuation() {
+  const itemName = document.getElementById('valuation-item-name')?.value?.trim();
+
+  if (!itemName) {
+    showToast('Please enter an item name');
+    return;
+  }
+
+  const button = document.getElementById('get-text-valuation-btn');
+  if (button) {
+    button.disabled = true;
+    button.textContent = '🔍 Searching eBay...';
+  }
+
+  try {
+    const response = await fetch('/api/ebay/valuation/text', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ itemName })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Valuation failed');
+    }
+
+    const valuation = await response.json();
+    renderValuationResults(valuation, false);
+  } catch (error) {
+    console.error('Text valuation failed:', error);
+    showToast(`✗ ${error.message}`);
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = '🔍 Get Valuation';
+    }
+  }
+}
+
+/**
+ * Handle photo-based valuation
+ */
+async function handlePhotoValuation() {
+  const fileInput = document.getElementById('valuation-photo');
+  const file = fileInput?.files?.[0];
+
+  if (!file) {
+    showToast('Please select a photo');
+    return;
+  }
+
+  const button = document.getElementById('get-photo-valuation-btn');
+  if (button) {
+    button.disabled = true;
+    button.textContent = '✨ Analyzing photo...';
+  }
+
+  const formData = new FormData();
+  formData.append('photo', file);
+
+  try {
+    const response = await fetch('/api/ebay/valuation/photo', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Photo valuation failed');
+    }
+
+    const valuation = await response.json();
+    renderValuationResults(valuation, true);
+
+    // Update quota display
+    await loadEbayValuation();
+  } catch (error) {
+    console.error('Photo valuation failed:', error);
+    showToast(`✗ ${error.message}`);
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = '✨ Analyze & Value';
+    }
+  }
+}
+
+/**
+ * Render valuation results
+ */
+function renderValuationResults(valuation, isPhotoValuation) {
+  // Show results container
+  const resultsEl = document.getElementById('valuation-results');
+  if (resultsEl) {
+    resultsEl.style.display = 'block';
+  }
+
+  // Show detected item for photo valuations
+  const detectedItemEl = document.getElementById('photo-detected-item');
+  const detectedItemNameEl = document.getElementById('detected-item-name');
+  if (isPhotoValuation && detectedItemEl && detectedItemNameEl) {
+    detectedItemEl.style.display = 'block';
+    detectedItemNameEl.textContent = valuation.detectedItem || 'Unknown';
+  } else if (detectedItemEl) {
+    detectedItemEl.style.display = 'none';
+  }
+
+  // Update KPIs
+  const suggestedPriceEl = document.getElementById('valuation-suggested-price');
+  if (suggestedPriceEl) {
+    suggestedPriceEl.textContent = `$${valuation.suggestedPrice.toFixed(2)}`;
+  }
+
+  const priceRangeEl = document.getElementById('valuation-price-range');
+  if (priceRangeEl) {
+    priceRangeEl.textContent = `$${valuation.priceRange.min.toFixed(2)} - $${valuation.priceRange.max.toFixed(2)}`;
+  }
+
+  const soldCountEl = document.getElementById('valuation-sold-count');
+  if (soldCountEl) {
+    soldCountEl.textContent = valuation.marketData.soldCount;
+  }
+
+  // Update confidence bar
+  const confidencePercent = Math.round(valuation.confidence * 100);
+  const confidenceBarEl = document.getElementById('valuation-confidence-bar');
+  if (confidenceBarEl) {
+    confidenceBarEl.style.width = `${confidencePercent}%`;
+  }
+
+  const confidenceTextEl = document.getElementById('valuation-confidence-text');
+  if (confidenceTextEl) {
+    confidenceTextEl.textContent = `${confidencePercent}%`;
+  }
+
+  // Render sample listings
+  const sampleListingsCountEl = document.getElementById('sample-listings-count');
+  if (sampleListingsCountEl) {
+    sampleListingsCountEl.textContent = valuation.marketData.listings?.length || 0;
+  }
+
+  const sampleListingsEl = document.getElementById('sample-listings');
+  if (sampleListingsEl && valuation.marketData.listings) {
+    sampleListingsEl.innerHTML = valuation.marketData.listings
+      .map(listing => `
+        <div style="padding: 8px; border-bottom: 1px solid var(--border); font-size: 14px;">
+          <p><strong>${listing.title}</strong></p>
+          <p class="muted">Price: $${listing.price.toFixed(2)} | Condition: ${listing.condition}</p>
+        </div>
+      `)
+      .join('');
+  }
+
+  // Scroll to results
+  if (resultsEl) {
+    resultsEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+}
+
+/**
+ * Clear valuation results
+ */
+function clearValuationResults() {
+  const resultsEl = document.getElementById('valuation-results');
+  if (resultsEl) {
+    resultsEl.style.display = 'none';
+  }
+
+  // Clear inputs
+  const itemNameEl = document.getElementById('valuation-item-name');
+  if (itemNameEl) {
+    itemNameEl.value = '';
+  }
+
+  const photoEl = document.getElementById('valuation-photo');
+  if (photoEl) {
+    photoEl.value = '';
   }
 }
 
@@ -2389,6 +3112,29 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('add-expense')?.addEventListener('click', handleAddExpense);
   document.getElementById('add-lot')?.addEventListener('click', handleAddLot);
   document.getElementById('add-draft')?.addEventListener('click', handleAddPricingDraft);
+  document.getElementById('import-chatgpt-btn')?.addEventListener('click', handleChatGPTImport);
+  document.getElementById('import-ebay-listings-btn')?.addEventListener('click', handleImportEbayListings);
+  document.getElementById('import-ebay-sales-btn')?.addEventListener('click', handleImportEbaySales);
+
+  // eBay Valuation buttons
+  document.getElementById('get-text-valuation-btn')?.addEventListener('click', handleTextValuation);
+  document.getElementById('get-photo-valuation-btn')?.addEventListener('click', handlePhotoValuation);
+  document.getElementById('clear-valuation-btn')?.addEventListener('click', clearValuationResults);
+
+  // eBay Valuation method toggle
+  document.querySelectorAll('input[name="valuation-method"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      const textInput = document.getElementById('text-valuation-input');
+      const photoInput = document.getElementById('photo-valuation-input');
+      if (e.target.value === 'text') {
+        if (textInput) textInput.style.display = 'block';
+        if (photoInput) photoInput.style.display = 'none';
+      } else {
+        if (textInput) textInput.style.display = 'none';
+        if (photoInput) photoInput.style.display = 'block';
+      }
+    });
+  });
 
   // Batch actions buttons
   document.getElementById('batch-clear')?.addEventListener('click', () => {
@@ -2458,6 +3204,70 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // FAB (Floating Action Button) handlers
+  const fabBtn = document.getElementById('fab-btn');
+  const fabMenu = document.getElementById('fab-menu');
+
+  if (fabBtn && fabMenu) {
+    // Toggle FAB menu
+    fabBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = fabMenu.classList.contains('open');
+
+      if (isOpen) {
+        fabMenu.classList.remove('open');
+        fabMenu.style.display = 'none';
+      } else {
+        fabMenu.style.display = 'flex';
+        // Small delay for animation
+        setTimeout(() => fabMenu.classList.add('open'), 10);
+      }
+    });
+
+    // Close FAB menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!fabBtn.contains(e.target) && !fabMenu.contains(e.target)) {
+        fabMenu.classList.remove('open');
+        setTimeout(() => {
+          if (!fabMenu.classList.contains('open')) {
+            fabMenu.style.display = 'none';
+          }
+        }, 300);
+      }
+    });
+
+    // Handle FAB option clicks
+    document.querySelectorAll('.fab-option').forEach(option => {
+      option.addEventListener('click', async (e) => {
+        const action = e.currentTarget.dataset.action;
+
+        // Close FAB menu
+        fabMenu.classList.remove('open');
+        setTimeout(() => fabMenu.style.display = 'none', 300);
+
+        // Execute action
+        switch (action) {
+          case 'quick-add-item':
+            handleQuickAddItem();
+            break;
+          case 'quick-sale':
+            handleQuickSale();
+            break;
+          case 'quick-expense':
+            handleAddExpense();
+            break;
+          case 'ebay-check':
+            loadScreen('ebay-valuation');
+            break;
+          case 'bulk-actions':
+            showToast('Select items in inventory to use bulk actions');
+            loadScreen('inventory');
+            break;
+        }
+      });
+    });
+  }
+
   // Check for eBay OAuth callback status
   const urlParams = new URLSearchParams(window.location.search);
   const ebayStatus = urlParams.get('status');
@@ -2471,6 +3281,120 @@ document.addEventListener('DOMContentLoaded', () => {
     // Remove status param from URL
     window.history.replaceState({}, '', window.location.pathname + window.location.hash);
   }
+
+  // Clipboard auto-detection for ChatGPT imports
+  let clipboardBanner = null;
+  let lastClipboardCheck = '';
+
+  async function checkClipboard() {
+    try {
+      // Check if clipboard API is available
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        return;
+      }
+
+      const text = await navigator.clipboard.readText();
+
+      // Ignore if clipboard hasn't changed
+      if (text === lastClipboardCheck || text.length < 20) {
+        return;
+      }
+
+      lastClipboardCheck = text;
+
+      // Detect CSV format (ChatGPT import pattern)
+      const hasCSVHeaders = /name.*description.*category|name.*cost.*bin/i.test(text);
+      const hasCSVRows = text.split('\n').length > 2;
+
+      if (hasCSVHeaders && hasCSVRows) {
+        showClipboardBanner('ChatGPT CSV detected - Import items?', () => {
+          // Create a CSV file from clipboard text
+          const blob = new Blob([text], { type: 'text/csv' });
+          const file = new File([blob], 'clipboard-import.csv', { type: 'text/csv' });
+
+          // Trigger import
+          const formData = new FormData();
+          formData.append('file', file);
+
+          fetch('/api/import/chatgpt-items', {
+            method: 'POST',
+            body: formData
+          })
+          .then(res => res.json())
+          .then(result => {
+            if (result.imported > 0) {
+              showToast(`✓ Imported ${result.imported} items from clipboard`);
+              loadInventory();
+            }
+          })
+          .catch(err => {
+            showToast(`✗ Import failed: ${err.message}`);
+          });
+        });
+      }
+    } catch (error) {
+      // Silently fail - clipboard access may be denied
+      console.log('Clipboard check skipped:', error.message);
+    }
+  }
+
+  function showClipboardBanner(message, onAccept) {
+    // Remove existing banner
+    if (clipboardBanner) {
+      clipboardBanner.remove();
+    }
+
+    // Create banner
+    clipboardBanner = document.createElement('div');
+    clipboardBanner.style.cssText = `
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      padding: 16px 24px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 9999;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      animation: slideUp 0.3s ease;
+    `;
+
+    clipboardBanner.innerHTML = `
+      <span>📋 ${message}</span>
+      <button class="btn small" id="clipboard-accept">Import</button>
+      <button class="btn ghost small" id="clipboard-dismiss">Dismiss</button>
+    `;
+
+    document.body.appendChild(clipboardBanner);
+
+    // Accept button
+    document.getElementById('clipboard-accept').onclick = () => {
+      clipboardBanner.remove();
+      clipboardBanner = null;
+      onAccept();
+    };
+
+    // Dismiss button
+    document.getElementById('clipboard-dismiss').onclick = () => {
+      clipboardBanner.remove();
+      clipboardBanner = null;
+    };
+
+    // Auto-hide after 10 seconds
+    setTimeout(() => {
+      if (clipboardBanner) {
+        clipboardBanner.remove();
+        clipboardBanner = null;
+      }
+    }, 10000);
+  }
+
+  // Check clipboard on window focus
+  window.addEventListener('focus', checkClipboard);
 
   // Load initial screen
   loadScreen('dashboard');

@@ -1710,3 +1710,107 @@ kbd {
     grid-template-columns: repeat(var(--columns, 5), minmax(80px, 1fr));
   }
 }
+
+/* ============================================================================
+   FLOATING ACTION BUTTON (FAB)
+   ============================================================================ */
+
+.fab-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+}
+
+.fab-main {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fab-main:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.fab-main:active {
+  transform: scale(0.95);
+}
+
+.fab-menu {
+  position: absolute;
+  bottom: 70px;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.fab-menu.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: all;
+}
+
+.fab-option {
+  padding: 12px 20px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fab-option:hover {
+  background: var(--bg-hover);
+  transform: translateX(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.fab-option:active {
+  transform: translateX(-4px) scale(0.98);
+}
+
+/* Mobile adjustments for FAB */
+@media (max-width: 768px) {
+  .fab-container {
+    bottom: 80px; /* Clear space for nav bar */
+    right: 16px;
+  }
+
+  .fab-main {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+
+  .fab-menu {
+    bottom: 60px;
+  }
+
+  .fab-option {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+}

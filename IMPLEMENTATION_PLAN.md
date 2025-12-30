@@ -21,6 +21,22 @@
 - [x] Themes: Peach (default), Blue, Purple, Teal, Green, Pink
 - [x] Deployed and live
 
+**How Color Themes Work:**
+- Color themes affect EVERYTHING in the application except background and foreground text
+- **What changes with themes:**
+  - `--accent` - Button colors, borders, navigation highlights, card accents
+  - `--accent-light` - Gradients, hover states, lighter UI elements
+  - `--accent-glow` - Subtle background glows and highlights
+  - `--shadow`, `--shadow-lg`, `--shadow-xl` - All shadows throughout the app (contain accent colors)
+- **What stays constant (never changes):**
+  - `--bg` - Main background color (cream in light mode, brown in dark mode)
+  - `--panel` - Panel background color
+  - `--text` - Main text color (brown in light mode, cream in dark mode)
+  - `--muted` - Secondary text color
+- **Result:** Switching from Peach → Blue theme makes buttons, borders, navigation, cards, and shadows all blue-themed while keeping the warm cream background and brown text
+- **Implementation:** Uses CSS attribute selectors `body[data-color-theme="blue"]` to override CSS variables
+- **Location:** `public/styles.css` lines 52-141
+
 ### 3. Infrastructure ✅
 - [x] GitHub Actions workflow updated for eBay secrets
 - [x] Secrets configured: EBAY_APP_ID, EBAY_CERT_ID, EBAY_RU_NAME

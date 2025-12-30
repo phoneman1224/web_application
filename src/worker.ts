@@ -36,7 +36,12 @@ import {
   exchangeCodeForTokens,
   saveEbayTokens,
   isEbayConnected,
-  disconnectEbay
+  disconnectEbay,
+  getTextValuation,
+  getPhotoValuation,
+  createEbayDraftListing,
+  fetchEbayListings,
+  fetchEbayOrders
 } from './lib/ebay';
 
 export interface Env {
@@ -1925,6 +1930,282 @@ router.get('/api/ai/usage', async (request, params, env: Env) => {
 });
 
 // ============================================================================
+// EBAY VALUATION ENDPOINTS
+// ============================================================================
+
+/**
+ * POST /api/ebay/valuation/text
+ * Get eBay market valuation (text-based, FREE)
+ * Body: { itemName: string, category?: string }
+ */
+router.post('/api/ebay/valuation/text', async (request, params, env: Env) => {
+  const body = await parseJsonBody<any>(request);
+  validateRequired(body, ['itemName']);
+
+  const { isEbayConnected, getTextValuation } = await import('./lib/ebay');
+
+  // Check eBay connection
+  const connected = await isEbayConnected(env.DB);
+  if (!connected) {
+    return badRequest('eBay not connected. Please connect eBay in Settings.');
+  }
+
+  try {
+    const valuation = await getTextValuation(env.DB, env, body.itemName, body.category);
+    return ok(valuation);
+  } catch (error: any) {
+    console.error('eBay text valuation failed:', error);
+    return badRequest(`Valuation failed: ${error.message}`);
+  }
+});
+
+/**
+ * POST /api/ebay/valuation/photo
+ * Get eBay market valuation (photo-based, 800 neurons)
+ * Body: FormData with 'photo' file
+ */
+router.post('/api/ebay/valuation/photo', async (request, params, env: Env) => {
+  const { canUseAI, logAIUsage } = await import('./lib/ai-monitor');
+
+  // Check AI quota (800 neurons for photo analysis)
+  const quotaCheck = await canUseAI(env.DB, 'ebay-photo-valuation', 800);
+  if (!quotaCheck.allowed) {
+    return badRequest(quotaCheck.reason || 'AI quota exceeded', { usage: quotaCheck.usage });
+  }
+
+  const { isEbayConnected, getPhotoValuation } = await import('./lib/ebay');
+
+  // Check eBay connection
+  const connected = await isEbayConnected(env.DB);
+  if (!connected) {
+    return badRequest('eBay not connected. Please connect eBay in Settings.');
+  }
+
+  // Parse photo from FormData
+  const formData = await request.formData();
+  const file = formData.get('photo') as File;
+
+  if (!file) {
+    return badRequest('No photo provided');
+  }
+
+  if (!file.type.startsWith('image/')) {
+    return badRequest('File must be an image');
+  }
+
+  try {
+    const photoData = await file.arrayBuffer();
+    const valuation = await getPhotoValuation(env.DB, env, photoData);
+
+    // Log AI usage
+    await logAIUsage(env.DB, 'ebay-photo-valuation', 800);
+
+    return ok(valuation);
+  } catch (error: any) {
+    console.error('eBay photo valuation failed:', error);
+    return badRequest(`Valuation failed: ${error.message}`);
+  }
+});
+
+/**
+ * POST /api/ebay/create-draft
+ * Create eBay draft listing
+ * Body: { itemId: string, sku: string, title: string, price: number, quantity: number, condition: string, description?: string }
+ */
+router.post('/api/ebay/create-draft', async (request, params, env: Env) => {
+  const body = await parseJsonBody<any>(request);
+  validateRequired(body, ['itemId', 'sku', 'title', 'price', 'quantity', 'condition']);
+
+  const { isEbayConnected, createEbayDraftListing } = await import('./lib/ebay');
+  const { update } = await import('./lib/db');
+
+  // Check eBay connection
+  const connected = await isEbayConnected(env.DB);
+  if (!connected) {
+    return badRequest('eBay not connected. Please connect eBay in Settings.');
+  }
+
+  // Validate price and quantity
+  validatePositive(body.price, 'price');
+  validatePositive(body.quantity, 'quantity');
+
+  // Validate condition
+  const validConditions = ['NEW', 'USED_EXCELLENT', 'USED_GOOD', 'FOR_PARTS_OR_NOT_WORKING'];
+  if (!validConditions.includes(body.condition)) {
+    return badRequest(`Invalid condition. Must be one of: ${validConditions.join(', ')}`);
+  }
+
+  try {
+    // Create eBay draft listing
+    const result = await createEbayDraftListing(env.DB, env, {
+      sku: body.sku,
+      title: body.title.substring(0, 80), // Enforce eBay's 80 char limit
+      price: body.price,
+      quantity: body.quantity,
+      condition: body.condition,
+      description: body.description,
+      categoryId: body.categoryId
+    });
+
+    if (!result.success) {
+      return badRequest(`Failed to create eBay draft: ${result.error}`);
+    }
+
+    // Update local item with eBay listing info
+    await update(env.DB, 'items', body.itemId, {
+      ebay_listing_id: result.offerId || null,
+      ebay_status: 'draft',
+      status: 'Draft'
+    });
+
+    return created({
+      message: 'eBay draft listing created successfully',
+      listingId: result.listingId,
+      offerId: result.offerId,
+      draftUrl: result.draftUrl
+    });
+  } catch (error: any) {
+    console.error('eBay draft creation failed:', error);
+    return badRequest(`Draft creation failed: ${error.message}`);
+  }
+});
+
+/**
+ * POST /api/ebay/import-listings
+ * Import active eBay listings to local database
+ */
+router.post('/api/ebay/import-listings', async (request, params, env: Env) => {
+  try {
+    // Check eBay connection
+    const isConnected = await isEbayConnected(env.DB);
+    if (!isConnected) {
+      return badRequest('eBay not connected. Please authenticate first.');
+    }
+
+    // Fetch listings from eBay
+    const result = await fetchEbayListings(env.DB, env);
+
+    // Create items for new listings
+    let imported = 0;
+    const errors: string[] = [];
+
+    for (const listing of result.listings) {
+      try {
+        await env.DB.prepare(`
+          INSERT INTO items (
+            name, description, cost, category, status, bin_location,
+            ebay_listing_id, ebay_status, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        `).bind(
+          listing.name,
+          listing.description,
+          listing.cost,
+          listing.category,
+          listing.status,
+          listing.sku, // Use SKU as bin location for imported items
+          listing.ebay_listing_id,
+          listing.ebay_status
+        ).run();
+
+        imported++;
+      } catch (error: any) {
+        errors.push(`Failed to import ${listing.name}: ${error.message}`);
+      }
+    }
+
+    return created({
+      imported,
+      duplicates: result.duplicateCount,
+      errors: errors.length,
+      errorDetails: errors
+    });
+
+  } catch (error: any) {
+    console.error('eBay listing import failed:', error);
+    return badRequest(`Import failed: ${error.message}`);
+  }
+});
+
+/**
+ * POST /api/ebay/import-sales
+ * Import eBay orders (sales) for a date range
+ */
+router.post('/api/ebay/import-sales', async (request, params, env: Env) => {
+  try {
+    // Check eBay connection
+    const isConnected = await isEbayConnected(env.DB);
+    if (!isConnected) {
+      return badRequest('eBay not connected. Please authenticate first.');
+    }
+
+    // Parse date range from request body
+    const body = await request.json() as { dateRange?: { start: string; end: string } };
+
+    // Fetch orders from eBay
+    const result = await fetchEbayOrders(env.DB, env, body.dateRange);
+
+    // Create sales records
+    let imported = 0;
+    const errors: string[] = [];
+
+    for (const sale of result.sales) {
+      try {
+        // Insert sale
+        const saleResult = await env.DB.prepare(`
+          INSERT INTO sales (
+            order_number, sale_date, platform,
+            gross_amount, platform_fees, shipping_cost, net_amount, profit,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        `).bind(
+          sale.order_number,
+          sale.sale_date,
+          sale.platform,
+          sale.gross_amount,
+          sale.platform_fees,
+          sale.shipping_cost,
+          sale.net_amount,
+          sale.profit
+        ).run();
+
+        const saleId = saleResult.meta.last_row_id;
+
+        // Link sale to items via junction table
+        for (const itemId of sale.item_ids) {
+          await env.DB.prepare(`
+            INSERT INTO sale_items (sale_id, item_id)
+            VALUES (?, ?)
+          `).bind(saleId, itemId).run();
+
+          // Update item status to Sold
+          await env.DB.prepare(`
+            UPDATE items
+            SET status = 'Sold', lifecycle_stage = 'Sold', updated_at = datetime('now')
+            WHERE id = ?
+          `).bind(itemId).run();
+        }
+
+        imported++;
+      } catch (error: any) {
+        errors.push(`Failed to import order ${sale.order_number}: ${error.message}`);
+      }
+    }
+
+    return created({
+      imported,
+      matched: result.matchedCount,
+      orphaned: result.orphanedCount,
+      errors: errors.length,
+      errorDetails: errors
+    });
+
+  } catch (error: any) {
+    console.error('eBay sales import failed:', error);
+    return badRequest(`Import failed: ${error.message}`);
+  }
+});
+
+// ============================================================================
 // EBAY OAUTH INTEGRATION
 // ============================================================================
 
@@ -2381,6 +2662,81 @@ router.post('/api/import/expenses', async (request, params, env: Env) => {
 
       await insert(env.DB, 'expenses', expenseData);
       imported.push(expenseData.id);
+    } catch (error: any) {
+      errors.push({ row: i + 1, error: error.message });
+    }
+  }
+
+  return ok({
+    imported: imported.length,
+    errors: errors.length,
+    errorDetails: errors.slice(0, 10)
+  });
+});
+
+/**
+ * POST /api/import/chatgpt-items
+ * Import items from ChatGPT-generated CSV
+ * Accepts CSV with columns: name, description, category, cost, bin_location, sku (optional)
+ */
+router.post('/api/import/chatgpt-items', async (request, params, env: Env) => {
+  const formData = await request.formData();
+  const file = formData.get('file') as File;
+
+  if (!file) {
+    return badRequest('No file provided');
+  }
+
+  const text = await file.text();
+  const lines = text.split('\n').filter(line => line.trim());
+
+  if (lines.length === 0) {
+    return badRequest('CSV file is empty');
+  }
+
+  // Parse header
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+
+  // Validate required columns
+  if (!headers.includes('name')) {
+    return badRequest('CSV must include "name" column');
+  }
+
+  const imported = [];
+  const errors = [];
+
+  // Process data rows
+  for (let i = 1; i < lines.length; i++) {
+    try {
+      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+      const row: Record<string, any> = {};
+
+      headers.forEach((header, index) => {
+        row[header] = values[index] || null;
+      });
+
+      // Create item with ChatGPT data
+      const itemData = {
+        id: generateId('itm'),
+        sku: row.sku || null,
+        name: row.name,
+        description: row.description || null,
+        cost: parseFloat(row.cost) || 0,
+        bin_location: row.bin_location || null,
+        photos: null,
+        category: row.category || null,
+        status: 'Unlisted',
+        lifecycle_stage: 'Captured',
+        sold_price: null,
+        sold_date: null,
+        ai_suggested_category: null,
+        ai_category_confidence: null,
+        ebay_listing_id: null,
+        ebay_status: null
+      };
+
+      await insert(env.DB, 'items', itemData);
+      imported.push(itemData.id);
     } catch (error: any) {
       errors.push({ row: i + 1, error: error.message });
     }

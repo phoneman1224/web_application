@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#ff7b54" />
     <title>Reseller Ops</title>
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="manifest" href="/manifest.json" />
     <link rel="icon" href="/icons/reseller-ops-icon.svg" sizes="any" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icons/reseller-ops-icon.svg" />
     <link rel="stylesheet" href="/styles.css?v=9" />
@@ -40,6 +40,7 @@
           <button class="nav-link" data-screen="expenses">Expenses</button>
           <button class="nav-link" data-screen="lots">Lots & Bundles</button>
           <button class="nav-link" data-screen="pricing">Pricing & SEO</button>
+          <button class="nav-link" data-screen="ebay-valuation">🏷️ eBay Valuation</button>
           <button class="nav-link" data-screen="reports">Reports (Tax Prep)</button>
           <button class="nav-link" data-screen="settings">Settings</button>
         </nav>
@@ -104,6 +105,48 @@
                 </div>
               </div>
             </article>
+
+            <!-- eBay Activity Summary Widget -->
+            <article class="panel">
+              <h2>📦 eBay Activity</h2>
+              <div class="inline-grid">
+                <div class="kpi">
+                  <p class="value" id="ebay-active-count">0</p>
+                  <p class="label">Active Listings</p>
+                </div>
+                <div class="kpi">
+                  <p class="value" id="ebay-draft-count">0</p>
+                  <p class="label">Drafts</p>
+                </div>
+                <div class="kpi">
+                  <p class="value" id="ebay-sold-week">0</p>
+                  <p class="label">Sold This Week</p>
+                </div>
+              </div>
+            </article>
+
+            <!-- eBay Action Items Widget -->
+            <article class="panel">
+              <h2>⚠️ Action Items</h2>
+              <ul class="next-list" id="ebay-action-items">
+                <li class="muted">Loading eBay data...</li>
+              </ul>
+            </article>
+
+            <!-- eBay Performance Widget -->
+            <article class="panel">
+              <h2>📊 eBay Performance (MTD)</h2>
+              <div class="inline-grid">
+                <div class="kpi">
+                  <p class="value positive" id="ebay-mtd-sales">$0</p>
+                  <p class="label">eBay Sales</p>
+                </div>
+                <div class="kpi">
+                  <p class="value" id="ebay-profit-margin">0%</p>
+                  <p class="label">Profit Margin</p>
+                </div>
+              </div>
+            </article>
           </div>
         </section>
 
@@ -115,6 +158,8 @@
             </div>
             <div class="actions">
               <button class="btn" id="add-item">Add item</button>
+              <button class="btn secondary" id="import-chatgpt-btn">📋 Import from ChatGPT</button>
+              <button class="btn secondary" id="import-ebay-listings-btn">📥 Import from eBay</button>
               <button class="btn ghost" id="ready-filter">Ready to List</button>
             </div>
           </div>
@@ -164,6 +209,7 @@
             </div>
             <div class="actions">
               <button class="btn" id="add-sale">Log sale</button>
+              <button class="btn secondary" id="import-ebay-sales-btn">📥 Import eBay Sales</button>
             </div>
           </div>
           <div class="panel">
@@ -309,6 +355,105 @@
                 <h3>Closed period edits</h3>
                 <p class="warning">2 edits awaiting confirmation</p>
               </article>
+            </div>
+          </div>
+        </section>
+
+        <!-- eBay Valuation Screen -->
+        <section class="screen" id="screen-ebay-valuation">
+          <div class="screen-header">
+            <div>
+              <h1>eBay Market Valuation</h1>
+              <p>Get real-time pricing from sold eBay listings</p>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>Get eBay Market Price</h3>
+
+            <!-- Valuation Method Selector -->
+            <div class="form-row">
+              <label>Valuation Method</label>
+              <div class="radio-group">
+                <label>
+                  <input type="radio" name="valuation-method" value="text" checked />
+                  ⌨️ Type Item Name (Unlimited, Free)
+                </label>
+                <label>
+                  <input type="radio" name="valuation-method" value="photo" />
+                  📷 Analyze Photo (<span id="photo-valuations-remaining">12</span>/12 today - uses AI quota)
+                </label>
+              </div>
+            </div>
+
+            <!-- Text-based Valuation Input -->
+            <div id="text-valuation-input">
+              <div class="form-row">
+                <label>
+                  <span>Item Name</span>
+                  <input type="text" id="valuation-item-name" placeholder="e.g., Vintage Canon AE-1 Camera" />
+                </label>
+              </div>
+              <div class="form-row">
+                <button class="btn" id="get-text-valuation-btn">🔍 Get Valuation</button>
+              </div>
+            </div>
+
+            <!-- Photo-based Valuation Input -->
+            <div id="photo-valuation-input" style="display:none;">
+              <div class="form-row">
+                <label>
+                  <span>Upload Photo</span>
+                  <input type="file" id="valuation-photo" accept="image/*" capture="environment" />
+                </label>
+              </div>
+              <div class="form-row">
+                <button class="btn" id="get-photo-valuation-btn">✨ Analyze & Value</button>
+              </div>
+              <p class="muted">AI will detect the item and search eBay for pricing. Uses 800 neurons per valuation.</p>
+            </div>
+
+            <!-- Valuation Results -->
+            <div id="valuation-results" style="display:none; margin-top: 24px;">
+              <div class="ai-suggestion-box">
+                <h4>📊 eBay Market Analysis</h4>
+
+                <div id="photo-detected-item" style="display:none; margin-bottom: 16px;">
+                  <p><strong>Detected Item:</strong> <span id="detected-item-name"></span></p>
+                </div>
+
+                <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin: 16px 0;">
+                  <div class="kpi">
+                    <span class="value" id="valuation-suggested-price">$0</span>
+                    <span class="label">Suggested Price</span>
+                  </div>
+                  <div class="kpi">
+                    <span class="value" id="valuation-price-range">$0 - $0</span>
+                    <span class="label">Price Range</span>
+                  </div>
+                  <div class="kpi">
+                    <span class="value" id="valuation-sold-count">0</span>
+                    <span class="label">Sold Listings</span>
+                  </div>
+                </div>
+
+                <div class="confidence-bar" style="margin: 16px 0;">
+                  <span>Confidence:</span>
+                  <div class="progress-bar">
+                    <div class="progress-fill" id="valuation-confidence-bar" style="width: 0%"></div>
+                  </div>
+                  <span id="valuation-confidence-text">0%</span>
+                </div>
+
+                <details style="margin-top: 16px;">
+                  <summary style="cursor: pointer; font-weight: 500;">View Sample Listings (<span id="sample-listings-count">0</span>)</summary>
+                  <div id="sample-listings" style="margin-top: 12px;"></div>
+                </details>
+
+                <div class="form-row" style="margin-top: 16px;">
+                  <button class="btn ghost" id="clear-valuation-btn">Clear Results</button>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -521,7 +666,7 @@
         <div class="form-row">
           <label>
             <span>Photos</span>
-            <input type="file" id="photo-upload" accept="image/*" multiple />
+            <input type="file" id="photo-upload" accept="image/*" capture="environment" multiple />
           </label>
           <div class="photo-preview-grid" id="photo-preview"></div>
           <button type="button" class="btn ghost small ai-btn" id="analyze-photo-btn" disabled>
@@ -696,7 +841,7 @@
         <div class="form-row">
           <label>
             <span>Receipt</span>
-            <input type="file" id="receipt-upload" accept="image/*,application/pdf" />
+            <input type="file" id="receipt-upload" accept="image/*,application/pdf" capture="environment" />
           </label>
         </div>
       </form>
@@ -828,6 +973,113 @@
         </div>
       </form>
     </template>
+
+    <!-- ChatGPT Import Template -->
+    <template id="template-chatgpt-import">
+      <div class="panel">
+        <h4>Import Items from ChatGPT</h4>
+        <p class="muted">Upload a CSV file generated by ChatGPT with columns: name, description, category, cost, bin_location, sku (optional)</p>
+
+        <div class="form-row">
+          <label>
+            <span>CSV File <span class="required">*</span></span>
+            <input type="file" id="chatgpt-csv-file" accept=".csv" required />
+          </label>
+        </div>
+
+        <details style="margin-top: 16px;">
+          <summary style="cursor: pointer; font-weight: 500;">How to generate CSV with ChatGPT</summary>
+          <pre style="background: var(--panel); padding: 12px; border-radius: 4px; font-size: 12px; margin-top: 8px; overflow-x: auto;">I have the following items to add to my inventory. Generate a CSV with these columns:
+name, description, category, cost, bin_location, sku
+
+Items:
+[paste your list here]
+
+Format as CSV with headers in first row.</pre>
+        </details>
+      </div>
+    </template>
+
+    <!-- eBay Draft Listing Form Template -->
+    <template id="template-ebay-draft">
+      <form id="ebay-draft-form" class="form">
+        <input type="hidden" name="itemId" />
+        <input type="hidden" name="sku" />
+
+        <div class="form-row two-col">
+          <div>
+            <label>
+              <span>Title (max 80 chars) <span class="required">*</span></span>
+              <input type="text" name="title" id="ebay-title" maxlength="80" required />
+              <p class="field-hint"><span id="ebay-title-char-count">0</span>/80</p>
+            </label>
+          </div>
+          <div>
+            <label>
+              <span>Price <span class="required">*</span></span>
+              <input type="number" name="price" id="ebay-price" step="0.01" min="0.01" required />
+            </label>
+          </div>
+        </div>
+
+        <div class="form-row two-col">
+          <div>
+            <label>
+              <span>Condition <span class="required">*</span></span>
+              <select name="condition" id="ebay-condition" required>
+                <option value="">-- Select Condition --</option>
+                <option value="NEW">New</option>
+                <option value="USED_EXCELLENT">Like New</option>
+                <option value="USED_GOOD">Good</option>
+                <option value="FOR_PARTS_OR_NOT_WORKING">For Parts</option>
+              </select>
+            </label>
+          </div>
+          <div>
+            <label>
+              <span>Quantity <span class="required">*</span></span>
+              <input type="number" name="quantity" id="ebay-quantity" value="1" min="1" required />
+            </label>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>
+            <span>Description</span>
+            <textarea name="description" id="ebay-description" rows="4" placeholder="Detailed item description..."></textarea>
+          </label>
+        </div>
+
+        <div class="panel" style="background: var(--bg-alt); padding: 12px; margin-top: 16px;">
+          <p class="muted" style="font-size: 14px; margin: 0;">
+            <strong>Smart Defaults Applied:</strong><br/>
+            • Category: Auto-detected by eBay<br/>
+            • Shipping: USPS Ground Advantage (cheapest)<br/>
+            • Returns: 30 days accepted<br/>
+            • Duration: Good 'Til Cancelled<br/>
+            • Photos: Uploaded from your inventory
+          </p>
+        </div>
+
+        <div class="panel" style="background: var(--accent-light); padding: 12px; margin-top: 12px;">
+          <p style="font-size: 14px; margin: 0;">
+            ℹ️ After creating the draft, you can review and publish it on eBay. We'll open the drafts page for you.
+          </p>
+        </div>
+      </form>
+    </template>
+
+    <!-- Floating Action Button (FAB) -->
+    <div class="fab-container">
+      <button class="fab-main" id="fab-btn" aria-label="Quick Actions">⚡</button>
+      <div class="fab-menu" id="fab-menu" style="display: none;">
+        <button class="fab-option" data-action="quick-add-item">➕ Quick Add Item</button>
+        <button class="fab-option" data-action="quick-sale">💰 Quick Sale</button>
+        <button class="fab-option" data-action="quick-expense">🧾 Quick Expense</button>
+        <button class="fab-option" data-action="ebay-check">🏷️ eBay Check</button>
+        <button class="fab-option" data-action="bulk-actions">📦 Bulk Actions</button>
+      </div>
+    </div>
 
     <script src="/app.js?v=9" type="module"></script>
   </body>

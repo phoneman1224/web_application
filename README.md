@@ -19,11 +19,20 @@ A complete, feature-rich web application for managing your eBay reselling busine
 - **Lots & Bundles** - Group items for bundled pricing and listing
 - **Pricing Drafts** - Create and manage pricing suggestions with confidence scores
 
-### AI-Powered Features (7 AI Tools)
+### eBay Integration
+- **Market Valuation** - Real-time eBay pricing from completed listings (text & photo-based)
+- **Draft Listings** - Create eBay inventory items and unpublished offers (5-field forms)
+- **Import Listings** - Sync active eBay listings to local database (duplicate detection)
+- **Import Sales** - Auto-import eBay orders with item matching and profit calculation
+- **ChatGPT Import** - Bulk import from ChatGPT CSV responses (clipboard auto-detect)
+- **Dashboard Widgets** - eBay activity summary, action items, and performance metrics
+
+### AI-Powered Features (8 AI Tools)
 - **SEO Generation** - eBay-optimized titles (80 char limit), descriptions, and keywords
 - **Price Suggestions** - AI-recommended pricing with min/max range and reasoning
 - **Smart Categorization** - Auto-categorize items and expenses
 - **Photo Analysis** - Detect item type, condition, and category from photos
+- **eBay Photo Valuation** - AI-powered item detection + eBay market research (800 neurons)
 - **Dashboard Insights** - Personalized business insights, warnings, and opportunities
 - **Expense Splitting** - Intelligent allocation across categories
 - **Description Enhancement** - Improve basic descriptions with SEO keywords
@@ -167,6 +176,208 @@ npm run dev
    # Deploy both
    npm run deploy:all
    ```
+
+---
+
+## 🛒 eBay Integration
+
+Complete eBay API integration for market research, listing creation, and sales sync.
+
+### Features
+
+**1. Market Valuation (FREE)**
+- **Text-based:** Search eBay completed listings by item name (unlimited)
+- **Photo-based:** AI analyzes photo → searches eBay (800 neurons = ~12/day)
+- Returns: suggested price, price range, confidence score, sample listings
+- Access: Navigation → "🏷️ eBay Valuation" or FAB → "eBay Check"
+
+**2. Draft Listing Creation**
+- Create eBay inventory items + unpublished offers
+- 5-field form: title (80 char), price, condition, quantity, description
+- Smart defaults: shipping, returns, duration (Good 'Til Cancelled)
+- Opens eBay drafts page for review and publishing
+- Access: Item detail → "List on eBay" button
+
+**3. Import Active Listings**
+- Sync eBay inventory items to local database
+- Duplicate detection via `ebay_listing_id`
+- Preserves: SKU, title, description, price, quantity, status
+- Access: Inventory screen → "📥 Import from eBay"
+
+**4. Import Sales Orders**
+- Fetch eBay orders with date range picker (default: last 30 days)
+- Auto-match to items via `ebay_listing_id`
+- Calculates: gross amount, platform fees, shipping, net amount, profit
+- Updates item status to "Sold"
+- Access: Sales screen → "📥 Import eBay Sales"
+
+**5. ChatGPT Bulk Import**
+- Upload CSV from ChatGPT (e.g., "convert this list to CSV format")
+- Expected columns: name, description, category, cost, bin_location
+- Creates items with status='Unlisted'
+- **Clipboard auto-detect:** Copy CSV → switch to app → auto-import banner
+- Access: Inventory screen → "📋 Import from ChatGPT"
+
+**6. Dashboard Widgets**
+- **eBay Activity:** Active listings, drafts, sold this week
+- **Action Items:** Ready to list, stale listings, needs valuation, pending drafts
+- **eBay Performance:** MTD sales, profit margin
+
+### Setup Instructions
+
+**1. Create eBay Developer Account**
+```
+1. Go to https://developer.ebay.com/
+2. Sign in with eBay account
+3. Click "Get Started" → Create Application
+4. Application Title: "ResellerOS"
+5. Select: Production (not Sandbox)
+```
+
+**2. Configure OAuth Consent**
+```
+1. Grant Application Access to APIs: ✓
+2. Required scopes:
+   - https://api.ebay.com/oauth/api_scope
+   - https://api.ebay.com/oauth/api_scope/sell.inventory
+   - https://api.ebay.com/oauth/api_scope/sell.account
+   - https://api.ebay.com/oauth/api_scope/buy.browse (for market research)
+3. OAuth Redirect URI: https://your-app.workers.dev/api/ebay/callback
+```
+
+**3. Get Credentials**
+```
+1. Copy App ID (Client ID)
+2. Copy Cert ID (Client Secret)
+3. Copy Redirect URI (RuName)
+```
+
+**4. Add to Cloudflare Worker Secrets**
+```bash
+# Using wrangler CLI
+wrangler secret put EBAY_APP_ID
+wrangler secret put EBAY_CERT_ID
+wrangler secret put EBAY_RU_NAME
+
+# Or via Cloudflare Dashboard
+# Workers → Your Worker → Settings → Variables → Add variable
+```
+
+**5. Configure eBay Business Policies** (One-time setup)
+```
+1. Go to https://www.ebay.com/sh/ovw/
+2. Settings → Business Policies
+3. Create policies:
+   - Payment Policy: Managed Payments (required)
+   - Shipping Policy: USPS Ground (or your preference)
+   - Return Policy: 30 days (recommended)
+4. Set as default policies
+```
+
+**6. Connect eBay in App**
+```
+1. Go to Settings screen
+2. Click "Connect eBay"
+3. Authorize access on eBay
+4. Redirected back to app → "eBay connected successfully!"
+```
+
+### Usage Workflow
+
+**Daily Workflow:**
+```
+1. Source items → ChatGPT import (or manual entry)
+2. Take photos → Upload to items
+3. Get valuations → eBay Valuation screen
+4. Create listings → "List on eBay" button
+5. Review drafts → eBay.com/sh/lst/drafts
+6. Publish → Items go live on eBay
+7. Import sales → Track locally for profit/tax
+```
+
+**Weekly Sync:**
+```
+1. Import eBay listings → Catch any manual listings
+2. Import eBay sales → Match to items, update status
+3. Review dashboard → Action items, performance metrics
+```
+
+### API Endpoints
+
+- `GET /api/ebay/auth` - Initiate OAuth flow
+- `GET /api/ebay/callback` - OAuth callback handler
+- `GET /api/ebay/status` - Check connection status
+- `DELETE /api/ebay/disconnect` - Remove eBay integration
+- `POST /api/ebay/valuation/text` - Text-based market research
+- `POST /api/ebay/valuation/photo` - Photo-based valuation (AI + eBay)
+- `POST /api/ebay/create-draft` - Create draft listing
+- `POST /api/ebay/import-listings` - Import active listings
+- `POST /api/ebay/import-sales` - Import orders/sales
+- `POST /api/import/chatgpt-items` - ChatGPT CSV import
+
+### Database Schema Changes
+
+**Migration:** `migrations/0004_ebay_fields.sql`
+
+```sql
+-- Add eBay tracking fields to items table
+ALTER TABLE items ADD COLUMN ebay_listing_id TEXT;
+ALTER TABLE items ADD COLUMN ebay_status TEXT CHECK (ebay_status IN (NULL, 'draft', 'active', 'ended', 'sold'));
+
+-- Indexes for performance
+CREATE INDEX idx_items_ebay_listing ON items(ebay_listing_id) WHERE ebay_listing_id IS NOT NULL;
+CREATE INDEX idx_items_ebay_status ON items(ebay_status) WHERE ebay_status IS NOT NULL;
+```
+
+**Note:** Only 2 fields added - minimal schema impact
+
+### Mobile Features
+
+**PWA Shortcuts** (long-press app icon):
+- Quick Add Item
+- eBay Valuation
+- Record Sale
+- Import from eBay
+
+**Camera Integration:**
+- All photo inputs have direct camera access
+- Use environment (rear) camera by default
+
+**Clipboard Auto-Detection:**
+- Copy ChatGPT CSV response
+- Switch to app → Banner: "📋 ChatGPT CSV detected - Import items?"
+- One-click import
+- Auto-dismisses after 10 seconds
+
+### Quota & Limits
+
+**eBay API:**
+- 5,000 calls/day (free tier)
+- Typical usage: <100/day
+
+**AI Photo Valuation:**
+- 800 neurons per valuation
+- Daily limit: ~12 valuations (10,000 neurons ÷ 800)
+- Text-based valuation: **UNLIMITED** (no AI cost)
+
+### Troubleshooting
+
+**"eBay not connected"**
+- Go to Settings → Click "Connect eBay"
+- Ensure OAuth redirect URI matches exactly
+
+**"Token expired"**
+- Tokens auto-refresh on 401 errors
+- If refresh fails, reconnect eBay
+
+**"Failed to create listing"**
+- Ensure Business Policies are configured
+- Check title length (max 80 chars)
+- Verify all required fields
+
+**Import returns 0 items**
+- Check eBay account has active listings
+- Verify OAuth scopes include `sell.inventory`
 
 ---
 
@@ -402,14 +613,16 @@ All features work within Cloudflare's free tier limits:
 
 ## 📊 Project Stats
 
-- **Backend:** 2,450+ lines of TypeScript
-- **Frontend:** 2,892+ lines (792 HTML + 2,100 JS)
-- **Styling:** 980+ lines of CSS
+- **Backend:** 2,870+ lines of TypeScript (+420 for eBay integration)
+- **Frontend:** 3,752+ lines (1,032 HTML + 2,720 JS)
+- **Styling:** 1,084+ lines of CSS
 - **Tests:** 123 tests across 3 suites
-- **API Endpoints:** 54+ across 14 categories
-- **Documentation:** 4 comprehensive guides
-- **AI Features:** 7 AI-powered tools
-- **UX Features:** 15+ keyboard shortcuts, batch actions, sortable tables
+- **API Endpoints:** 60+ across 15 categories (54 core + 10 eBay)
+- **Documentation:** 5 comprehensive guides + eBay integration guide
+- **AI Features:** 8 AI-powered tools
+- **eBay Features:** 6 integration features (valuation, import, listing, widgets)
+- **Mobile Features:** PWA shortcuts, camera integration, clipboard auto-detect
+- **UX Features:** FAB, 15+ keyboard shortcuts, batch actions, sortable tables
 
 ---
 
@@ -418,13 +631,21 @@ All features work within Cloudflare's free tier limits:
 ### Completed ✅
 - Phase 1-8: Complete application with backend, frontend, AI, testing
 - Phase 9: CI/CD, comprehensive documentation
+- **Phase 10: eBay Integration** ✅
+  - OAuth 2.0 authentication
+  - Market valuation (text & photo-based)
+  - Draft listing creation
+  - Import listings and sales
+  - ChatGPT bulk import with clipboard auto-detect
+  - Dashboard widgets and action items
+  - PWA shortcuts and mobile optimizations
 
 ### Future Enhancements
 - **Offline Mode:** Service worker with background sync
 - **Multi-Language:** i18n support for international sellers
 - **Advanced Analytics:** Charts, trends, forecasting
 - **Mobile App:** Native iOS/Android apps (Capacitor)
-- **Integrations:** Direct eBay API integration (optional)
+- **Mercari Integration:** Similar to eBay integration
 - **Collaboration:** Multi-user support with role-based access
 
 ---
@@ -478,11 +699,14 @@ Built with:
 - [x] TEST and PROD environments
 - [x] CI/CD pipeline configured
 - [x] Zero Trust authentication enforced
-- [x] 54+ API endpoints implemented
-- [x] 7 AI features integrated
-- [x] Complete documentation
-- [x] Mobile PWA support
+- [x] 60+ API endpoints implemented (54 core + 10 eBay)
+- [x] 8 AI features integrated
+- [x] eBay integration complete (6 features)
+- [x] Complete documentation (README + 5 guides)
+- [x] Mobile PWA support with shortcuts
 - [x] Free tier compliant
+- [x] Floating Action Button (FAB)
+- [x] Clipboard auto-detection
 
 ---
 
